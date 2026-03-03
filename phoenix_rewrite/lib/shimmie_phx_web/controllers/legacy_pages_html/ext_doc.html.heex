@@ -1,0 +1,37 @@
+<article class="noleft">
+  <section id="Extension_Managermain">
+    <h3 data-toggle-sel="#Extension_Managermain" class="">
+      <%= if @page_kind == :manager, do: "Extension Manager", else: "Board Help" %>
+    </h3>
+    <div class="blockbody">
+      <table id="extensions" class="zebra">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <%= if @page_kind == :manager do %>
+              <th>Enabled</th>
+            <% else %>
+              <th>Docs</th>
+            <% end %>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <%= for row <- @rows do %>
+            <tr data-ext={row.name}>
+              <td><%= row.name %></td>
+              <%= if @page_kind == :manager do %>
+                <td><%= if row.enabled?, do: "Yes", else: "No" %></td>
+              <% else %>
+                <td>
+                  <a href={"/ext_doc/#{row.key}"}>View</a>
+                </td>
+              <% end %>
+              <td style="text-align: left;"><%= row.description %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</article>

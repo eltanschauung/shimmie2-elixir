@@ -1,0 +1,242 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head>
+    <title><%= assigns[:page_title] || ShimmiePhoenix.Site.Appearance.site_title() %></title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script type="text/javascript">
+      base_href = '';
+    </script>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <%= for css_path <- ShimmiePhoenix.Site.Appearance.css_paths() do %>
+      <link rel="stylesheet" href={css_path} type="text/css" />
+    <% end %>
+    <%= if script_path = ShimmiePhoenix.Site.Appearance.script_path() do %>
+      <script defer src={script_path} type="text/javascript">
+      </script>
+    <% end %>
+    <script defer src="/ext/autocomplete/lib/jquery.min.js" type="text/javascript">
+    </script>
+    <script defer src="/ext/autocomplete/lib/jquery-ui.min.js" type="text/javascript">
+    </script>
+    <script defer src="/ext/autocomplete/lib/tag-it.min.js" type="text/javascript">
+    </script>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="//ajax.googleapis.com/ajax/libs/jqueryui/1/themes/flick/jquery-ui.css"
+    />
+    <link rel="stylesheet" type="text/css" href="/ext/autocomplete/lib/jquery.tagit.css" />
+    <link rel="stylesheet" type="text/css" href="/ext/autocomplete/style.css" />
+    <script defer src="/ext/autocomplete/script.js" type="text/javascript">
+    </script>
+    <link
+      rel="search"
+      type="application/opensearchdescription+xml"
+      title={ShimmiePhoenix.Site.Appearance.site_title()}
+      href="/browser_search.xml"
+    />
+    <style>
+      #Searchleft form,
+      #Navigationleft form {
+        min-height: 28px;
+      }
+
+      /* Keep /post/list search input + button on one row without overflow */
+      #Searchleft .blockbody > form[action="/post/list"] {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+        min-width: 0;
+      }
+
+      #Searchleft form > input[name="search"]:not(.tagit-hidden-field),
+      #Searchleft form > ul.tagit,
+      #Navigationleft form > input[name="search"]:not(.tagit-hidden-field),
+      #Navigationleft form > ul.tagit {
+        display: block;
+        width: 100%;
+        min-height: 28px;
+        line-height: 16px;
+        margin: 0;
+        box-sizing: border-box;
+      }
+
+      #Searchleft .blockbody > form[action="/post/list"] > ul.tagit {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      #Searchleft .blockbody > form[action="/post/list"] > input[type="submit"] {
+        flex: 0 0 auto;
+        width: auto;
+        padding: 2px 8px;
+      }
+
+      #Searchleft form > ul.tagit,
+      #Navigationleft form > ul.tagit {
+        padding-top: 1px;
+        padding-bottom: 1px;
+        overflow: hidden !important;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      #Searchleft form > ul.tagit::-webkit-scrollbar,
+      #Navigationleft form > ul.tagit::-webkit-scrollbar {
+        display: none;
+      }
+
+      #Searchleft form > ul.tagit > li.tagit-new,
+      #Navigationleft form > ul.tagit > li.tagit-new {
+        width: 100%;
+      }
+
+      #Searchleft form > ul.tagit input[type="text"],
+      #Navigationleft form > ul.tagit input[type="text"] {
+        width: 100%;
+      }
+
+      #Searchleft form > input[name="search"].tagit-hidden-field,
+      #Navigationleft form > input[name="search"].tagit-hidden-field {
+        display: none !important;
+      }
+    </style>
+    <%= if is_list(assigns[:preload_images]) do %>
+      <%= for image_href <- assigns[:preload_images] do %>
+        <link rel="preload" as="image" href={image_href} fetchpriority="high" />
+      <% end %>
+    <% end %>
+    <%= if keyword_text = assigns[:meta_keywords] do %>
+      <meta name="keywords" content={keyword_text} />
+    <% end %>
+    <%= if og_title = assigns[:meta_og_title] do %>
+      <meta property="og:title" content={og_title} />
+    <% end %>
+    <%= if og_type = assigns[:meta_og_type] do %>
+      <meta property="og:type" content={og_type} />
+    <% end %>
+    <%= if og_image = assigns[:meta_og_image] do %>
+      <meta property="og:image" content={og_image} />
+    <% end %>
+    <%= if og_url = assigns[:meta_og_url] do %>
+      <meta property="og:url" content={og_url} />
+    <% end %>
+    <%= if assigns[:include_notes_assets] do %>
+      <link rel="stylesheet" type="text/css" href="/ext/notes/style.css" />
+      <script defer src="/ext/notes/lib/jquery.imgnotes-1.0.min.js" type="text/javascript">
+      </script>
+      <script
+        defer
+        src="/ext/notes/lib/jquery.imgareaselect-1.0.0-rc1.min.js"
+        type="text/javascript"
+      >
+      </script>
+      <link rel="stylesheet" type="text/css" href="/ext/notes/lib/jquery.imgnotes-1.0.min.css" />
+      <script defer src="/ext/notes/script.js" type="text/javascript">
+      </script>
+    <% end %>
+    <%= Phoenix.HTML.raw(ShimmiePhoenix.Site.Appearance.custom_html_headers()) %>
+  </head>
+  <body class={body_layout_class(assigns)}>
+    <%= if @legacy_chrome && @legacy_chrome.show? do %>
+      <% header_brand = ShimmiePhoenix.Site.Appearance.header_branding(@legacy_chrome.site_title) %>
+      <header>
+        <h1 id="site-title">
+          <a href="/" style={header_brand.link_style}><%= header_brand.title %></a>
+          <%= if header_brand.badge_src do %>
+            <img
+              id={header_brand.badge_id}
+              class={header_brand.badge_class}
+              src={header_brand.badge_src}
+              style={header_brand.badge_style}
+            />
+          <% end %>
+        </h1>
+        <ul id="navbar" class="flat-list">
+          <%= for link <- @legacy_chrome.nav_links do %>
+            <li>
+              <a class={if link.active?, do: "current-page", else: "tab"} href={link.href}>
+                <%= link.label %>
+              </a>
+            </li>
+          <% end %>
+        </ul>
+        <ul id="subnavbar" class="flat-list">
+          <div class="sbar">
+            <%= for link <- @legacy_chrome.sub_links do %>
+              <li>
+                <a class={if link.active?, do: "current-page", else: "tab"} href={link.href}>
+                  <%= link.label %>
+                </a>
+              </li>
+            <% end %>
+          </div>
+        </ul>
+      </header>
+
+      <div id="blotter1" class="shm-blotter1">
+        <span></span>
+        <span style="text-align: right; position: absolute; right: 0px;">
+          <a href="#" id="blotter2-toggle" class="shm-blotter2-toggle">Show/Hide</a>
+          <a href="/blotter/list">Show All</a>
+        </span>
+      </div>
+      <div id="blotter2" class="shm-blotter2">
+        <ul>
+          <%= for [_, entry_date, entry_text, _important] <- @legacy_chrome.blotter_entries do %>
+            <li><%= format_blotter_date(entry_date) %> - <%= entry_text %></li>
+          <% end %>
+        </ul>
+      </div>
+      <script>
+        document.addEventListener("DOMContentLoaded", function () {
+          var toggle = document.getElementById("blotter2-toggle");
+          var blotter = document.getElementById("blotter2");
+          if (!toggle || !blotter) return;
+
+          var hidden = localStorage.getItem("ui-blotter2-hidden") === "true";
+          if (hidden) blotter.style.display = "none";
+
+          toggle.addEventListener("click", function (event) {
+            event.preventDefault();
+            var isHidden = getComputedStyle(blotter).display === "none";
+            blotter.style.display = isHidden ? "" : "none";
+            localStorage.setItem("ui-blotter2-hidden", isHidden ? "false" : "true");
+          });
+        });
+      </script>
+    <% end %>
+
+    <%= if notice_html = assigns[:ip_ban_notice_html] do %>
+      <article class="noleft">
+        <section id="IP_Ban_Noticemain">
+          <h3 data-toggle-sel="#IP_Ban_Noticemain" class="">Notice</h3>
+          <div class="blockbody">
+            <%= Phoenix.HTML.raw(notice_html) %>
+          </div>
+        </section>
+      </article>
+    <% end %>
+
+    <%= @inner_content %>
+
+    <%= if @legacy_chrome && @legacy_chrome.show? do %>
+      <footer>
+        <div>
+          Media &copy; their respective owners,
+          <a href="https://code.shishnet.org/shimmie2/">Shimmie</a>
+          &copy; <a href="https://www.shishnet.org/">Shish</a>
+          &amp; <a href="https://github.com/shish/shimmie2/graphs/contributors">The Team</a>
+          2007-2020,
+          based on the Danbooru concept.
+          <%= if @legacy_chrome.contact_href do %>
+            <br /><a href={@legacy_chrome.contact_href}>Contact</a>
+          <% end %>
+        </div>
+      </footer>
+    <% end %>
+  </body>
+</html>

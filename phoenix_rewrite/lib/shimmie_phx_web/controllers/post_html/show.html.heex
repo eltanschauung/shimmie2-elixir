@@ -1,0 +1,410 @@
+<nav>
+  <section id="Searchleft">
+    <h3 data-toggle-sel="#Searchleft" class=" shm-toggler">Search</h3>
+    <div class="blockbody">
+      <form action="/post/list" method="GET">
+        <input
+          type="search"
+          name="search"
+          value=""
+          placeholder="Search posts"
+          class="autocomplete_tags"
+          autocomplete="off"
+        />
+        <input type="hidden" name="q" value="/post/list" />
+        <input type="submit" value="Go" style="display: none;" />
+      </form>
+    </div>
+  </section>
+
+  <section id="Tagsleft">
+    <h3 data-toggle-sel="#Tagsleft" class=" shm-toggler">Tags</h3>
+    <div class="blockbody">
+      <table class="tag_list sortable">
+        <colgroup>
+          <col class="tag_info_link_column" />
+          <col class="tag_name_column" />
+          <col class="tag_count_column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="tag_info_link_cell"></th>
+            <th class="tag_name_cell">Tag</th>
+            <th class="tag_count_cell">#</th>
+          </tr>
+        </thead>
+        <tbody>
+          <%= for row <- @tag_rows do %>
+            <tr>
+              <td class="tag_info_link_cell">
+                <a class="tag_info_link" href={row.wiki_url}>?</a>
+              </td>
+              <td class="tag_name_cell">
+                <a class="tag_name" href={"/post/list/#{URI.encode(row.tag)}/1"}>
+                  <%= String.replace(row.tag, "_", " ") %>
+                </a>
+              </td>
+              <td class="tag_count_cell"><span class="tag_count"><%= row.count %></span></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="Informationleft">
+    <h3 data-toggle-sel="#Informationleft" class=" shm-toggler">Information</h3>
+    <div class="blockbody">
+      ID: <%= @post.id %><br /> Uploader:
+      <a href={"/user/#{URI.encode(@owner_name)}"}><%= @owner_name %></a>
+      <%= if @can_view_uploader_ip and @uploader_ip != "" do %>
+        (<%= @uploader_ip %>
+        <%= if @can_ban_uploader_ip do %>
+          ,
+          <a href={
+            "/ip_ban/list?c_ip=#{URI.encode_www_form(@uploader_ip)}" <>
+              "&c_reason=#{URI.encode_www_form("Post posted #{@post.posted}")}" <>
+              "&c_expires=#{URI.encode_www_form("+1 week")}#create"
+          }>
+            Ban
+          </a>
+        <% end %>)
+      <% end %>
+      <br /> Date: <time datetime={@post.posted}><%= format_post_date(@post.posted) %></time>
+      <br />
+      Size: <%= human_filesize(@post.filesize) %> (<%= @post.width %>x<%= @post.height %>)<br />
+      Type: <%= ShimmiePhoenix.Site.Posts.image_mime(@post) %><br /> Rating: <%= @rating_label %>
+    </div>
+  </section>
+
+  <section id="Post_Controlsleft">
+    <h3 data-toggle-sel="#Post_Controlsleft" class=" shm-toggler">Post Controls</h3>
+    <div class="blockbody">
+      <%= if @show_approval_controls do %>
+        <form
+          action={
+            if(@post_approved,
+              do: "/disapprove_image/#{@post.id}",
+              else: "/approve_image/#{@post.id}"
+            )
+          }
+          method="POST"
+        >
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+          <input type="hidden" name="image_id" value={@post.id} />
+          <input type="submit" value={if(@post_approved, do: "Disapprove", else: "Approve")} />
+        </form>
+        <br />
+      <% end %>
+      <%= if @logged_in? do %>
+        <form
+          action={
+            if(@favorited_by_current_user,
+              do: "/favourite/remove/#{@post.id}",
+              else: "/favourite/add/#{@post.id}"
+            )
+          }
+          method="POST"
+        >
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+          <input
+            type="submit"
+            value={if(@favorited_by_current_user, do: "Un-Favorite", else: "Favorite")}
+          />
+        </form>
+        <br />
+      <% end %>
+      <%= if @admin? do %>
+        <form action="/featured_image/set" method="POST">
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+          <input type="hidden" name="image_id" value={@post.id} />
+          <input type="submit" value="Feature This" />
+        </form>
+        <br />
+      <% end %>
+      <%= if @logged_in? do %>
+        <form action="" method="">
+          <input type="button" id="addnote" value="Add Note" />
+          <input type="hidden" name="image_id" value={@post.id} />
+        </form>
+        <br />
+        <form action="/note/add_request" method="POST">
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+          <input type="hidden" name="image_id" value={@post.id} />
+          <input id="noterequest" type="submit" value="Add Note Request" />
+        </form>
+        <br />
+      <% end %>
+      <%= if @admin? do %>
+        <form action="/note/nuke_notes" method="POST" onsubmit="return confirm('Are you sure?')">
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+          <input type="hidden" name="image_id" value={@post.id} />
+          <input id="noterequest" type="submit" value="Nuke Notes" />
+        </form>
+        <br />
+        <form
+          action="/note/nuke_requests"
+          method="POST"
+          onsubmit="return confirm('Are you sure?')"
+        >
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+          <input type="hidden" name="image_id" value={@post.id} />
+          <input id="noterequest" type="submit" value="Nuke Requests" />
+        </form>
+        <br />
+        <form action="/regen_thumb/one" method="POST">
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+          <input type="hidden" name="image_id" value={@post.id} />
+          <input type="submit" value="Regenerate Thumbnail" />
+        </form>
+        <br />
+        <span id="image_delete_form">
+          <form action="/image/delete" method="POST">
+            <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+            <input type="hidden" name="image_id" value={@post.id} />
+            <input
+              type="submit"
+              value="Delete"
+              onclick="return confirm('Delete the image?');"
+              id="image_delete_button"
+            />
+          </form>
+        </span>
+        <br />
+        <form action="/image/replace" method="POST">
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+          <input type="hidden" name="image_id" value={@post.id} />
+          <input type="submit" value="Replace" />
+        </form>
+        <br />
+      <% end %>
+      <form action={"/source_history/#{@post.id}"} method="GET">
+        <input type="submit" value="View Source History" />
+      </form>
+      <br />
+      <form action={"/tag_history/#{@post.id}"} method="GET">
+        <input type="submit" value="View Tag History" />
+      </form>
+      <br />
+      <form>
+        <select class="shm-zoomer">
+          <option value="full">Full Size</option>
+          <option value="width">Fit Width</option>
+          <option value="height">Fit Height</option>
+          <option value="both">Fit Both</option>
+        </select>
+      </form>
+    </div>
+  </section>
+
+  <%= if @favorite_users != [] do %>
+    <section id="Favoritesleft">
+      <h3 data-toggle-sel="#Favoritesleft" class=" shm-toggler">Favorited By:</h3>
+      <div class="blockbody">
+        <%= for name <- @favorite_users do %>
+          <a href={"/post/list/favorited_by=#{URI.encode(name)}/1"}><%= name %></a> <br />
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+</nav>
+
+<article class="withleft">
+  <h1 style="display:none;">Post <%= @post.id %>: <%= Enum.join(@post.tags || [], " ") %></h1>
+  <section id="note_system">
+    <div class="blockbody">
+      <script type="text/javascript">
+        notes = <%= Phoenix.HTML.raw(@notes_json || "[]") %>
+        notes_edit = <%= if @logged_in?, do: "true", else: "false" %>
+      </script>
+      <div id="noteform">
+        <form action="/note/add_note" method="POST">
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+          <input type="hidden" name="image_id" value={@post.id} />
+          <input name="note_x1" type="hidden" value="" id="NoteX1" />
+          <input name="note_y1" type="hidden" value="" id="NoteY1" />
+          <input name="note_height" type="hidden" value="" id="NoteHeight" />
+          <input name="note_width" type="hidden" value="" id="NoteWidth" />
+          <table>
+            <tr>
+              <td colspan="2"><textarea name="note_text" id="NoteNote"></textarea></td>
+            </tr>
+            <tr>
+              <td><input type="submit" value="Add Note" /></td>
+              <td><input type="button" value="Cancel" id="cancelnote" /></td>
+            </tr>
+          </table>
+        </form>
+      </div>
+      <div id="noteEditForm">
+        <form action="/note/edit_note" method="POST">
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+          <input type="hidden" name="image_id" value={@post.id} />
+          <input type="hidden" name="note_id" id="EditNoteID" value="" />
+          <input name="note_x1" type="hidden" value="" id="EditNoteX1" />
+          <input name="note_y1" type="hidden" value="" id="EditNoteY1" />
+          <input name="note_height" type="hidden" value="" id="EditNoteHeight" />
+          <input name="note_width" type="hidden" value="" id="EditNoteWidth" />
+          <table>
+            <tr>
+              <td colspan="2"><textarea name="note_text" id="EditNoteNote"></textarea></td>
+            </tr>
+            <tr>
+              <td><input type="submit" value="Save Note" /></td>
+              <td><input type="button" value="Cancel" id="EditCancelNote" /></td>
+            </tr>
+          </table>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section id="Imagemain">
+    <h3 data-toggle-sel="#Imagemain" class="">Image</h3>
+    <div class="blockbody">
+      <%= if String.starts_with?(ShimmiePhoenix.Site.Posts.image_mime(@post), "video/") do %>
+        <video
+          class="shm-main-image"
+          id="main_image"
+          controls
+          src={ShimmiePhoenix.Site.Posts.image_route(@post)}
+          data-width={@post.width}
+          data-height={@post.height}
+          data-mime={ShimmiePhoenix.Site.Posts.image_mime(@post)}
+        >
+        </video>
+      <% else %>
+        <img
+          alt="main image"
+          class="shm-main-image"
+          id="main_image"
+          src={ShimmiePhoenix.Site.Posts.image_route(@post)}
+          data-width={@post.width}
+          data-height={@post.height}
+          data-mime={ShimmiePhoenix.Site.Posts.image_mime(@post)}
+        />
+      <% end %>
+    </div>
+  </section>
+
+  <section id="post-info-main">
+    <div class="blockbody">
+      <form action="/post/set" method="POST">
+        <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+        <input type="hidden" name="image_id" value={@post.id} />
+        <table style="width: 500px; max-width: 100%;" class="image_info form">
+          <tr>
+            <th>Uploader</th>
+            <td>
+              <a class="username" href={"/user/#{URI.encode(@owner_name)}"}><%= @owner_name %></a><%= if @can_view_uploader_ip and to_string(@uploader_ip || "") != "" do %> (<%= @uploader_ip %><%= if @can_ban_uploader_ip do %>, <a href={
+                  "/ip_ban/list?c_ip=#{URI.encode_www_form(@uploader_ip)}" <>
+                    "&c_reason=#{URI.encode_www_form("Post posted #{@post.posted}")}" <>
+                    "&c_expires=#{URI.encode_www_form("+1 week")}#create"
+                }>Ban</a><% end %>)<% end %>,
+              <time datetime={@post.posted}><%= format_post_date(@post.posted) %></time>
+            </td>
+            <td width="80px" rowspan="4"></td>
+          </tr>
+          <tr>
+            <th width="50px">Tags</th>
+            <td>
+              <%= if @post.tags == [] do %>
+                (no tags)
+              <% else %>
+                <%= for tag <- @post.tags do %>
+                  <a href={"/post/list/#{URI.encode(tag)}/1"}><%= tag %></a>
+                <% end %>
+              <% end %>
+            </td>
+          </tr>
+          <tr>
+            <th>Source</th>
+            <td>
+              <div style="overflow: hidden; white-space: nowrap; max-width: 350px; text-overflow: ellipsis;">
+                <%= if is_binary(@source_href) and @source_href != "" do %>
+                  <a href={@source_href}><%= @source_href %></a>
+                <% else %>
+                  <%= @source_text %>
+                <% end %>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <th>Locked</th>
+            <td><%= @locked_label %></td>
+          </tr>
+          <tr>
+            <th>Parent</th>
+            <td>
+              <%= if @parent_id do %>
+                <a href={"/post/view/#{@parent_id}"}><%= @parent_id %></a>
+              <% else %>
+                None
+              <% end %>
+            </td>
+          </tr>
+          <tr>
+            <th>Rating</th>
+            <td><%= @rating_label %></td>
+          </tr>
+        </table>
+      </form>
+    </div>
+  </section>
+
+  <section id="comment-list-image">
+    <h3 data-toggle-sel="#comment-list-image" class="">Comments</h3>
+    <div class="blockbody">
+      <%= for comment <- @comments do %>
+        <table class="comment">
+          <tr>
+            <td class="meta">
+              <a class="username" href={"/user/#{URI.encode(comment.owner_name)}"}>
+                <%= comment.owner_name %>
+              </a>
+              <%= if @can_view_comment_ips and to_string(comment.owner_ip || "") != "" do %>
+                (<%= comment.owner_ip %><%= if @can_ban_comment_ips do %>, <a href={
+                    "/ip_ban/list?c_ip=#{URI.encode_www_form(comment.owner_ip)}" <>
+                      "&c_reason=#{URI.encode_www_form("Comment posted #{comment.posted}")}" <>
+                      "&c_expires=#{URI.encode_www_form("+1 week")}#create"
+                  }>Ban</a><% end %>)
+              <% end %>
+              <br />
+              <time datetime={comment.posted}><%= format_post_date(comment.posted) %></time>
+              -
+              <a href={"javascript: replyTo(#{@post.id}, #{comment.id}, \"#{comment.owner_name}\")"}>
+                Reply
+              </a>
+              <%= if @can_delete_comments do %>
+                -
+                <a
+                  href={"/comment/delete/#{comment.id}/#{@post.id}"}
+                  onclick="return confirm('Delete this comment?');"
+                >
+                  Del
+                </a>
+              <% end %>
+            </td>
+            <td><%= Phoenix.HTML.raw(format_comment_html(comment.comment)) %></td>
+          </tr>
+        </table>
+      <% end %>
+
+      <div class="comment comment_add">
+        <form action="/comment/add" method="POST">
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+          <input type="hidden" name="image_id" value={@post.id} />
+          <input type="hidden" name="hash" value={@comment_form_hash} />
+          <textarea id={"comment_on_#{@post.id}"} name="comment" rows="5" cols="50"></textarea>
+          <%= if @show_captcha do %>
+            <div class="g-recaptcha" data-sitekey={@recaptcha_key}></div>
+            <script type="text/javascript" src="https://www.google.com/recaptcha/api.js">
+            </script>
+          <% end %>
+          <br />
+          <input type="submit" value="Post Comment" />
+        </form>
+      </div>
+    </div>
+  </section>
+</article>

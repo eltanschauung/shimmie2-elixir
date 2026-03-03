@@ -1,0 +1,33 @@
+<article class="noleft">
+  <section id="Tag_Historymain">
+    <h3 data-toggle-sel="#Tag_Historymain" class=""><%= @heading %></h3>
+    <div class="blockbody">
+      <ul style="list-style-type:none; text-align: left; padding-left: 0;">
+        <%= for row <- @entries do %>
+          <li style="margin-bottom: 8px;">
+            <a href={"/post/view/#{row.image_id}"}><%= row.image_id %></a>
+            : <%= row.value %> -
+            <a href={"/user/#{URI.encode(row.user_name)}"}><%= row.user_name %></a>
+            - <%= row.date_set %>
+          </li>
+        <% end %>
+      </ul>
+      <%= if @prev_path || @next_path do %>
+        <p>
+          <%= if @prev_path do %>
+            <a href={@prev_path}>Prev</a>
+          <% else %>
+            Prev
+          <% end %>
+          | <a href="/">Index</a>
+          |
+          <%= if @next_path do %>
+            <a href={@next_path}>Next</a>
+          <% else %>
+            Next
+          <% end %>
+        </p>
+      <% end %>
+    </div>
+  </section>
+</article>

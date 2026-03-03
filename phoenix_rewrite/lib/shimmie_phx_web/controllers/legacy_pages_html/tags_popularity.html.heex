@@ -1,0 +1,20 @@
+<article class="noleft">
+  <section id="Tagsmain">
+    <h3 data-toggle-sel="#Tagsmain" class="">Tags</h3>
+    <div class="blockbody">
+      Results grouped by log<sub>10</sub>(n)
+      <%= for {bucket, rows} <- @groups do %>
+        <br /><br />
+        <%= bucket %><br />
+        <%= for row <- rows do %>
+          <span style="margin-right: 1em; white-space: nowrap;">
+            <a href={"/post/list/#{URI.encode(row.tag)}/1"}>
+              <%= String.replace(row.tag, "_", " ") %>
+            </a>
+            (<%= row.count %>)
+          </span>
+        <% end %>
+      <% end %>
+    </div>
+  </section>
+</article>

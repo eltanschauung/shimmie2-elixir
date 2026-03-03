@@ -6,6 +6,22 @@ data
 .phpactor.json
 .zed
 tmp/
+project.md
+extensions_enabled.txt
+
+# Local secrets / env files
+.env
+.env.*
+!.env.example
+phoenix_rewrite/.env
+phoenix_rewrite/.env.*
+!phoenix_rewrite/.env.example
+
+# Local databases / dumps
+*.sqlite
+*.sqlite3
+*.db
+*.dump
 
 #Composer
 /vendor/

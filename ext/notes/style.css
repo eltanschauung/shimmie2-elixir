@@ -1,66 +1,87 @@
-.notes-container {
-	pointer-events: none;
-	position: absolute;
-}
+.note {
+	display: block;
 
-.notes-container .note {
-	box-sizing: border-box;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	color: black;
 	background-color: #FFE;
-	border: 1px solid #DDC;
+	border: 1px dashed black;
 	overflow: hidden;
 	position: absolute;
+	z-index: 0;
+
+	filter:alpha(opacity=50);
+	-moz-opacity:0.5;
+	-khtml-opacity: 0.5;
 	opacity: 0.5;
-	z-index: 1;
-	pointer-events: auto;
-}
-/* note mouse events should be relative to the top-level note,
- * not relative to any inner elements */
-.notes-container .note DIV {
-    pointer-events: none;
-}
-.notes-container .note.editing {
-	opacity: 1;
-	z-index: 2;
-}
-.notes-container .note.editing.dragging {
-	opacity: 0.5;
-	z-index: 2;
-}
-.notes-container .note:hover {
-	opacity: 1;
-	z-index: 3;
 }
 
-.notes-container.dragging .editor {
-    display: none;
-}
-.notes-container .editor {
-	display: grid;
-	color: black;
-	background-color: #EFE;
-	border: 1px solid #000;
+.notep {
+	display: none;
+	color: #412a21;
+	background-color: #fffdef;
+	border: #412a21 1px solid;
+	font-size: 18pt;
+	margin-top: 0;
+	padding: 2px;
 	position: absolute;
-	grid-template-columns: 1fr 1fr;
-	grid-template-areas:
-		"text text"
-		"save cancel"
-		"delete delete";
-	z-index: 4;
-	pointer-events: auto;
+	width: 175px;
 }
-.notes-container .editor TEXTAREA {
-	grid-area: text;
+
+#noteform, #noteEditForm {
+	display: none;
+	position: absolute;
+	width: 250px;
 }
-.notes-container .editor BUTTON[value="Save"] {
-	grid-area: save;
+
+#noteform textarea, #noteEditForm textarea {
+	width: 100%;
 }
-.notes-container .editor BUTTON[value="Cancel"] {
-	grid-area: cancel;
+
+/*
+ * imgAreaSelect default style
+ */
+
+.imgareaselect-border1 {
+	background: url(border-v.gif) repeat-y left top;
 }
-.notes-container .editor BUTTON[value="Delete"] {
-	grid-area: delete;
+
+.imgareaselect-border2 {
+    background: url(border-h.gif) repeat-x left top;
+}
+
+.imgareaselect-border3 {
+    background: url(border-v.gif) repeat-y right top;
+}
+
+.imgareaselect-border4 {
+    background: url(border-h.gif) repeat-x left bottom;
+}
+
+.imgareaselect-border1, .imgareaselect-border2,
+.imgareaselect-border3, .imgareaselect-border4 {
+    filter: alpha(opacity=50);
+	opacity: 0.5;
+}
+
+.imgareaselect-handle {
+    background-color: #fff;
+    border: solid 1px #000;
+    filter: alpha(opacity=50);
+    opacity: 0.5;
+}
+
+.imgareaselect-outer {
+    /*background-color: #000;*/
+    filter: alpha(opacity=50);
+    opacity: 0.5;
+}
+
+.imgareaselect-selection {
+}
+
+/* Makes sure the note block is hidden */
+section#note_system {
+	height: 0;
+}
+section#note_system > .blockbody {
+	padding: 0;
+	border: 0;
 }

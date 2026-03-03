@@ -1,0 +1,84 @@
+defmodule ShimmiePhoenixWeb.FavoritesControllerTest do
+  use ShimmiePhoenixWeb.ConnCase, async: false
+
+  alias ShimmiePhoenix.SiteSchemaHelper
+  alias ShimmiePhoenix.Repo
+
+  setup do
+    SiteSchemaHelper.ensure_legacy_tables!()
+    SiteSchemaHelper.reset_legacy_tables!()
+
+    Repo.query!("INSERT INTO config(name, value) VALUES ($1, $2)", ["anon_id", "1"])
+
+    Repo.query!("INSERT INTO users(id, name, class) VALUES ($1, $2, $3)", [
+      1,
+      "Anonymous",
+      "anonymous"
+    ])
+
+    Repo.query!("INSERT INTO users(id, name, class) VALUES ($1, $2, $3)", [2, "alice", "user"])
+
+    Repo.query!(
+      """
+      INSERT INTO images(id, filename, filesize, hash, ext, source, width, height, favorites, posted)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      """,
+      [
+        301,
+        "fav.png",
+        1,
+        "addddddddddddddddddddddddddddddd",
+        "png",
+        nil,
+        1,
+        1,
+        0,
+        ~N[2026-01-01 12:00:00]
+      ]
+    )
+
+    :ok
+  end
+
+  test "POST /favourite/add/:id adds favorite and redirects", %{conn: conn} do
+    conn = post(conn, "/favourite/add/301", %{"user_id" => "2"})
+    assert redirected_to(conn) == "/post/view/301"
+
+    assert Repo.query!("SELECT COUNT(*) FROM user_favorites WHERE image_id = 301 AND user_id = 2").rows ==
+             [[1]]
+
+    assert Repo.query!("SELECT favorites FROM images WHERE id = 301").rows == [[1]]
+
+    conn = post(recycle(conn), "/favourite/add/301", %{"user_id" => "2"})
+    assert redirected_to(conn) == "/post/view/301"
+
+    assert Repo.query!("SELECT COUNT(*) FROM user_favorites WHERE image_id = 301 AND user_id = 2").rows ==
+             [[1]]
+
+    assert Repo.query!("SELECT favorites FROM images WHERE id = 301").rows == [[1]]
+  end
+
+  test "POST /favourite/remove/:id removes favorite and redirects", %{conn: conn} do
+    Repo.query!(
+      "INSERT INTO user_favorites(image_id, user_id, created_at) VALUES ($1, $2, NOW()) ON CONFLICT (image_id, user_id) DO NOTHING",
+      [301, 2]
+    )
+
+    Repo.query!(
+      "UPDATE images SET favorites = (SELECT COUNT(*) FROM user_favorites WHERE image_id = 301) WHERE id = 301"
+    )
+
+    conn = post(conn, "/favourite/remove/301", %{"user_id" => "2"})
+    assert redirected_to(conn) == "/post/view/301"
+
+    assert Repo.query!("SELECT COUNT(*) FROM user_favorites WHERE image_id = 301 AND user_id = 2").rows ==
+             [[0]]
+
+    assert Repo.query!("SELECT favorites FROM images WHERE id = 301").rows == [[0]]
+  end
+
+  test "POST /favourite/add/:id returns 404 for missing post", %{conn: conn} do
+    conn = post(conn, "/favourite/add/999999", %{"user_id" => "2"})
+    assert response(conn, 404)
+  end
+end

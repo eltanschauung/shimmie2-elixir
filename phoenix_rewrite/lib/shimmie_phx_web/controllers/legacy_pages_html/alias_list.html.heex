@@ -1,0 +1,79 @@
+<nav>
+  <section id="Navigationleft">
+    <h3 data-toggle-sel="#Navigationleft" class="shm-toggler">Navigation</h3>
+    <div class="blockbody">
+      <a href="/post/list">Index</a>
+      <br />
+      <a href="/tags/map">Tag List</a>
+    </div>
+  </section>
+</nav>
+
+<article class="withleft">
+  <section id="Aliasesmain">
+    <h3 data-toggle-sel="#Aliasesmain" class="">Alias List</h3>
+    <div class="blockbody">
+      <%= if @notice do %>
+        <p style="color: #070; font-weight: bold;"><%= @notice %></p>
+      <% end %>
+      <%= if @error do %>
+        <p style="color: #900; font-weight: bold;"><%= @error %></p>
+      <% end %>
+
+      <table class="zebra">
+        <thead>
+          <tr>
+            <th>Old Tag</th>
+            <th>New Tag</th>
+            <%= if @can_manage? do %>
+              <th>Action</th>
+            <% end %>
+          </tr>
+        </thead>
+        <tbody>
+          <%= if @rows == [] do %>
+            <tr>
+              <td colspan={if @can_manage?, do: 3, else: 2}>No aliases configured.</td>
+            </tr>
+          <% end %>
+          <%= for row <- @rows do %>
+            <tr>
+              <td><%= row.oldtag %></td>
+              <td><%= row.newtag %></td>
+              <%= if @can_manage? do %>
+                <td>
+                  <.form for={%{}} action="/alias/remove" method="post" style="margin: 0;">
+                    <input type="hidden" name="d_oldtag" value={row.oldtag} />
+                    <input type="submit" value="Delete" />
+                  </.form>
+                </td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+
+      <%= if @can_manage? do %>
+        <h4>Add Alias</h4>
+        <.form for={%{}} action="/alias/add" method="post">
+          <table class="form">
+            <tbody>
+              <tr>
+                <th><label for="c_oldtag">Old Tag</label></th>
+                <td><input id="c_oldtag" name="c_oldtag" type="text" required /></td>
+              </tr>
+              <tr>
+                <th><label for="c_newtag">New Tag</label></th>
+                <td><input id="c_newtag" name="c_newtag" type="text" required /></td>
+              </tr>
+              <tr>
+                <th></th>
+                <td><input type="submit" value="Save" /></td>
+              </tr>
+            </tbody>
+          </table>
+        </.form>
+      <% end %>
+    </div>
+  </section>
+</article>

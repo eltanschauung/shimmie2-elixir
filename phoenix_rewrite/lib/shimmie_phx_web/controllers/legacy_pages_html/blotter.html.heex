@@ -1,0 +1,10 @@
+<article class="noleft">
+  <section id="Blottermain">
+    <h3 data-toggle-sel="#Blottermain" class="">Blotter Entries</h3>
+    <div class="blockbody">
+      <pre><%= for entry <- @entries do %><span style={if(entry.important, do: "color: ##{@blotter_color};", else: nil)}><%= entry.entry_date %> - <%= entry.entry_text %></span>
+
+<% end %></pre>
+    </div>
+  </section>
+</article>

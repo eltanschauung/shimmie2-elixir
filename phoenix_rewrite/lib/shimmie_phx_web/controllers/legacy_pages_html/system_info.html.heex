@@ -1,0 +1,33 @@
+<article class="noleft">
+  <section id="System_Infomain">
+    <h3 data-toggle-sel="#System_Infomain" class="">System Info</h3>
+    <div class="blockbody">
+      <table class="zebra">
+        <tbody>
+          <tr>
+            <th>Site Title</th>
+            <td style="text-align: left;"><%= @info.site_title %></td>
+          </tr>
+          <tr>
+            <th>DB Mode</th>
+            <td style="text-align: left;"><%= @info.db_mode %></td>
+          </tr>
+          <tr>
+            <th>Posts</th>
+            <td style="text-align: left;"><%= @info.post_count %></td>
+          </tr>
+          <tr>
+            <th>Comments</th>
+            <td style="text-align: left;"><%= @info.comment_count %></td>
+          </tr>
+          <tr>
+            <th>Users</th>
+            <td style="text-align: left;"><%= @info.user_count %></td>
+          </tr>
+        </tbody>
+      </table>
+      <p><strong>Enabled Extensions</strong></p>
+      <p><%= Enum.join(@info.enabled_extensions, ", ") %></p>
+    </div>
+  </section>
+</article>

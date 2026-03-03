@@ -1,334 +1,90 @@
-/**
- * @type {
- *     notesContainer: HTMLElement,
- *     noteImage: HTMLElement,
- *     noteBeingEdited: null | number,
- *     dragStart: null | {
- *         x: number,
- *         y: number,
- *         mode: string,
- *     },
- * } Notes
- */
-let Notes = {
-    notesContainer: null,
-    noteImage: null,
-    noteBeingEdited: null,
-    dragStart: null,
-};
+/*jshint bitwise:true, curly:true, forin:false, noarg:true, noempty:true, nonew:true, undef:true, strict:false, browser:true, jquery:true */
 
-document.addEventListener("DOMContentLoaded", () => {
-    Notes.noteImage = document.getElementById("main_image");
-    if (window.notes && Notes.noteImage) {
-        if (Notes.noteImage.complete) {
-            Notes.renderNotes();
-        } else {
-            Notes.noteImage.addEventListener("load", Notes.renderNotes);
-        }
+document.addEventListener('DOMContentLoaded', () => {
+	if(window.notes) {
+		var $img = $('#main_image');
+		var initNotes = function() {
+			if(typeof $.fn.imgNotes === 'function') {
+				$img.imgNotes({notes: window.notes});
 
-        let resizeObserver = new ResizeObserver(Notes.renderNotes);
-        resizeObserver.observe(Notes.noteImage);
+				//Make sure notes are always shown
+				$img.off('mouseenter mouseleave');
+			}
+		};
 
-        Notes.noteImage.parentNode.addEventListener(
-            "scroll",
-            Notes.renderNotes,
-        );
+		// jQuery 3 removed the .load(handler) event shortcut.
+		$img.on('load', initNotes);
+		if($img.length && $img[0].complete && $img[0].naturalWidth > 0) {
+			initNotes();
+		}
+	}
 
-        // clone notes to make a restore point in case we cancel a note edit
-        window.notes_last_saved = JSON.parse(JSON.stringify(window.notes));
-    }
+	$('#cancelnote').click(function(){
+		$('#main_image').imgAreaSelect({ hide: true });
+		$('#noteform').hide();
+	});
+
+	$('#EditCancelNote').click(function() {
+		$('#main_image').imgAreaSelect({ hide: true });
+		$('#noteEditForm').hide();
+	});
+
+	$('#addnote').click(function(){
+		$('#noteEditForm').hide();
+		$('#main_image').imgAreaSelect({ onSelectChange: showaddnote, x1: 120, y1: 90, x2: 280, y2: 210 });
+		return false;
+	});
+
+	$('.note').click(function() {
+		$('#noteform').hide();
+		var imgOffset = $('#main_image').offset();
+
+		var x1 = parseInt(this.style.left) - imgOffset.left;
+		var y1 = parseInt(this.style.top) - imgOffset.top;
+		var width = parseInt(this.style.width);
+		var height = parseInt(this.style.height);
+		var text = $(this).next('.notep').text().replace(/([^>]?)\\n{2}/g, '$1\\n');
+		var id = $(this).next('.notep').next('.noteID').text();
+
+		$('#main_image').imgAreaSelect({ onSelectChange: showeditnote, x1: x1, y1: y1, x2: x1 + width, y2: y1 + height });
+		setEditNoteData(x1, y1, width, height, text, id);
+	});
 });
+		
+function showaddnote (img, area) {
+	var imgOffset = $(img).offset();
+	var form_left  = parseInt(imgOffset.left) + parseInt(area.x1);
+	var form_top   = parseInt(imgOffset.top) + parseInt(area.y1) + parseInt(area.height)+5;
 
-Notes.renderNotes = function () {
-    let notesContainer = Notes.notesContainer;
+	$('#noteform').css({ left: form_left + 'px', top: form_top + 'px'});
+	$('#noteform').show();
+	$('#noteform').css('z-index', 10000);
+	$('#NoteX1').val(area.x1);
+	$('#NoteY1').val(area.y1);
+	$('#NoteHeight').val(area.height);
+	$('#NoteWidth').val(area.width);
+}
 
-    // reset the DOM to empty
-    if (notesContainer) {
-        notesContainer.remove();
-    }
+function showeditnote (img, area) {
+	var imgOffset = $(img).offset();
+	var form_left  = parseInt(imgOffset.left) + area.x1;
+	var form_top   = parseInt(imgOffset.top) + area.y2;
 
-    // check the image we're adding notes on top of
-    let br = Notes.noteImage.getBoundingClientRect();
-    let scale = br.width / Notes.noteImage.dataset.width;
+	$('#noteEditForm').css({ left: form_left + 'px', top: form_top + 'px'});
+	$('#noteEditForm').show();
+	$('#noteEditForm').css('z-index', 10000);
+	$('#EditNoteX1').val(area.x1);
+	$('#EditNoteY1').val(area.y1);
+	$('#EditNoteHeight').val(area.height);
+	$('#EditNoteWidth').val(area.width);
+}
 
-    // render a container full of notes
-    Notes.notesContainer = document.createElement("div");
-    notesContainer = Notes.notesContainer;
-    notesContainer.className = "notes-container";
-    notesContainer.style.top = br.top + window.scrollY + "px";
-    notesContainer.style.left = br.left + window.scrollX + "px";
-    notesContainer.style.width = br.width + "px";
-    notesContainer.style.height = br.height + "px";
-
-    // render each note
-    window.notes.forEach((note) => {
-        let noteDiv = document.createElement("div");
-        noteDiv.classList.add("note");
-        noteDiv.style.left = note.x1 * scale + "px";
-        noteDiv.style.top = note.y1 * scale + "px";
-        noteDiv.style.width = note.width * scale + "px";
-        noteDiv.style.height = note.height * scale + "px";
-        let text = document.createElement("div");
-        text.innerText = note.note;
-        // only add listener if user has edit permissions
-        if (window.notes_edit) {
-            noteDiv.addEventListener("click", (e) => {
-                Notes.noteBeingEdited = note.note_id;
-                Notes.renderNotes();
-            });
-        }
-        noteDiv.appendChild(text);
-        notesContainer.appendChild(noteDiv);
-
-        // if the current note is being edited, render the editor
-        if (note.note_id == Notes.noteBeingEdited) {
-            let editor = Notes.renderEditor(noteDiv, note);
-            notesContainer.appendChild(editor);
-        }
-    });
-
-    Notes.noteImage.parentNode.appendChild(notesContainer);
-};
-
-/**
- *
- * @param {HTMLElement} noteDiv
- * @param {*} note
- * @returns
- */
-Notes.renderEditor = function (noteDiv, note) {
-    // check the image we're adding notes on top of
-    let br = Notes.noteImage.getBoundingClientRect();
-    let scale = br.width / Notes.noteImage.dataset.width;
-
-    // set the note itself into drag & resize mode
-    // NOTE: to avoid re-rendering the whole DOM every time the mouse
-    // moves, we directly edit the style of the noteDiv, and then when
-    // the mouse is released, we update the note object and re-render
-    noteDiv.classList.add("editing");
-    noteDiv.addEventListener("mousedown", (e) => {
-        Notes.dragStart = {
-            x: e.pageX,
-            y: e.pageY,
-            mode: Notes.getArea(
-                e.offsetX,
-                e.offsetY,
-                noteDiv.offsetWidth,
-                noteDiv.offsetHeight,
-            ),
-        };
-        noteDiv.classList.add("dragging");
-        Notes.notesContainer.classList.add("dragging");
-    });
-    noteDiv.addEventListener("mousemove", (e) => {
-        let dragStart = Notes.dragStart;
-        if (dragStart) {
-            if (dragStart.mode == "c") {
-                noteDiv.style.left =
-                    note.x1 * scale + (e.pageX - dragStart.x) + "px";
-                noteDiv.style.top =
-                    note.y1 * scale + (e.pageY - dragStart.y) + "px";
-            }
-            if (dragStart.mode.indexOf("n") >= 0) {
-                noteDiv.style.top =
-                    note.y1 * scale + (e.pageY - dragStart.y) + "px";
-                noteDiv.style.height =
-                    note.height * scale - (e.pageY - dragStart.y) + "px";
-            }
-            if (dragStart.mode.indexOf("s") >= 0) {
-                noteDiv.style.height =
-                    note.height * scale + (e.pageY - dragStart.y) + "px";
-            }
-            if (dragStart.mode.indexOf("w") >= 0) {
-                noteDiv.style.left =
-                    note.x1 * scale + (e.pageX - dragStart.x) + "px";
-                noteDiv.style.width =
-                    note.width * scale - (e.pageX - dragStart.x) + "px";
-            }
-            if (dragStart.mode.indexOf("e") >= 0) {
-                noteDiv.style.width =
-                    note.width * scale + (e.pageX - dragStart.x) + "px";
-            }
-        } else {
-            let area = Notes.getArea(
-                e.offsetX,
-                e.offsetY,
-                noteDiv.offsetWidth,
-                noteDiv.offsetHeight,
-            );
-            if (area == "c") {
-                noteDiv.style.cursor = "move";
-            } else {
-                noteDiv.style.cursor = area + "-resize";
-            }
-        }
-    });
-    function _commit() {
-        noteDiv.classList.remove("dragging");
-        Notes.notesContainer.classList.remove("dragging");
-        Notes.dragStart = null;
-        note.x1 = Math.round(noteDiv.offsetLeft / scale);
-        note.y1 = Math.round(noteDiv.offsetTop / scale);
-        note.width = Math.round(noteDiv.offsetWidth / scale);
-        note.height = Math.round(noteDiv.offsetHeight / scale);
-        Notes.renderNotes();
-    }
-    noteDiv.addEventListener("mouseup", _commit);
-    noteDiv.addEventListener("mouseleave", _commit);
-
-    // add textarea / save / cancel / delete buttons
-    let editor = document.createElement("div");
-    editor.classList.add("editor");
-    editor.style.left = note.x1 * scale + "px";
-    editor.style.top = (note.y1 + note.height) * scale + "px";
-
-    let textarea = document.createElement("textarea");
-    textarea.value = note.note;
-    textarea.addEventListener("input", () => {
-        note.note = textarea.value;
-    });
-    editor.appendChild(textarea);
-
-    let save = document.createElement("button");
-    save.innerText = "Save";
-    save.addEventListener("click", () => {
-        if (note.note_id == null) {
-            fetch(shm_make_link("note/create_note"), {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(note),
-            })
-                .then((response) => {
-                    if (response.ok) {
-                        return response.json();
-                    } else {
-                        throw new Error("Failed to create note");
-                    }
-                })
-                .then((data) => {
-                    note.note_id = data.note_id;
-                    // update restore point
-                    window.notes_last_saved.push(
-                        JSON.parse(JSON.stringify(note)),
-                    );
-                    Notes.renderNotes();
-                })
-                .catch((error) => {
-                    alert(error);
-                });
-        } else {
-            fetch(shm_make_link("note/update_note"), {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(note),
-            })
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error("Failed to update note");
-                    }
-                    // update restore point
-                    last_saved_note = window.notes_last_saved.filter(
-                        (n) => n.note_id == note.note_id,
-                    )[0];
-                    Object.assign(last_saved_note, note);
-                })
-                .catch((error) => {
-                    alert(error);
-                });
-        }
-        Notes.noteBeingEdited = null;
-        Notes.renderNotes();
-    });
-    editor.appendChild(save);
-
-    let cancel = document.createElement("button");
-    cancel.innerText = "Cancel";
-    cancel.addEventListener("click", () => {
-        Notes.noteBeingEdited = null;
-        if (note.note_id == null) {
-            // delete the un-saved note
-            window.notes = window.notes.filter((n) => n.note_id != null);
-        } else {
-            // restore note
-            last_saved_note = window.notes_last_saved.filter(
-                (n) => n.note_id == note.note_id,
-            )[0];
-            Object.assign(note, last_saved_note);
-        }
-        Notes.renderNotes();
-    });
-    editor.appendChild(cancel);
-
-    if (window.notes_admin && note.note_id != null) {
-        let deleteNote = document.createElement("button");
-        deleteNote.innerText = "Delete";
-        deleteNote.addEventListener("click", () => {
-            // TODO: delete note from server
-            fetch(shm_make_link("note/delete_note"), {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(note),
-            })
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error("Failed to delete note");
-                    }
-                })
-                .catch((error) => {
-                    alert(error);
-                });
-            Notes.noteBeingEdited = null;
-            window.notes = window.notes.filter(
-                (n) => n.note_id != note.note_id,
-            );
-            window.notes_last_saved = window.notes.filter(
-                (n) => n.note_id != note.note_id,
-            );
-            Notes.renderNotes();
-        });
-        editor.appendChild(deleteNote);
-    }
-
-    return editor;
-};
-
-Notes.addNewNote = function () {
-    if (window.notes.filter((note) => note.note_id == null).length > 0) {
-        alert("Please save all notes before adding a new one.");
-        return;
-    }
-    window.notes.push({
-        x1: Notes.noteImage.dataset.width * 0.1,
-        y1: Notes.noteImage.dataset.height * 0.1,
-        width: Notes.noteImage.dataset.width * 0.2,
-        height: Notes.noteImage.dataset.height * 0.1,
-        note: "new note",
-        note_id: null,
-        image_id: window.notes_image_id,
-    });
-    Notes.noteBeingEdited = null;
-    Notes.renderNotes();
-};
-
-/**
- *
- * @param {number} x
- * @param {number} y
- * @param {number} width
- * @param {number} height
- */
-Notes.getArea = function (x, y, width, height, border = 16) {
-    let area = "";
-    if (y < border) area += "n";
-    if (y > height - border) area += "s";
-    if (x < border) area += "w";
-    if (x > width - border) area += "e";
-    if (area === "") area = "c";
-    return area;
-};
+function setEditNoteData(x1, y1, width, height, text, id) {
+	$('#EditNoteX1').val(x1);
+	$('#EditNoteY1').val(y1);
+	$('#EditNoteHeight').val(height);
+	$('#EditNoteWidth').val(width);
+	$('#EditNoteNote').text(text);
+	$('#EditNoteID').val(id);
+	$('#DeleteNoteNoteID').val(id);
+}

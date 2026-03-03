@@ -1,0 +1,51 @@
+<article class="noleft">
+  <section id="Signupmain">
+    <h3 data-toggle-sel="#Signupmain" class="">Signup</h3>
+    <div class="blockbody">
+      <p>
+        For information <a href="/wiki/rules">click here.</a>
+      </p>
+
+      <%= if @notice do %>
+        <p><%= @notice %></p>
+      <% end %>
+      <%= if @error do %>
+        <p><%= @error %></p>
+      <% end %>
+
+      <form action="/user_admin/create" method="POST">
+        <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+        <table style="width: 300px;">
+          <tr>
+            <td>Name</td>
+            <td><input type="text" name="name" /></td>
+          </tr>
+          <tr>
+            <td>Password</td>
+            <td><input type="password" name="pass1" /></td>
+          </tr>
+          <tr>
+            <td>Repeat Password</td>
+            <td><input type="password" name="pass2" /></td>
+          </tr>
+          <tr>
+            <td>Email (Optional)</td>
+            <td><input type="text" name="email" /></td>
+          </tr>
+          <%= if is_binary(@recaptcha_site_key) and @recaptcha_site_key != "" do %>
+            <tr>
+              <td colspan="2">
+                <div class="g-recaptcha" data-sitekey={@recaptcha_site_key}></div>
+                <script type="text/javascript" src="https://www.google.com/recaptcha/api.js">
+                </script>
+              </td>
+            </tr>
+          <% end %>
+          <tr>
+            <td colspan="2"><input type="submit" value="Create Account" /></td>
+          </tr>
+        </table>
+      </form>
+    </div>
+  </section>
+</article>

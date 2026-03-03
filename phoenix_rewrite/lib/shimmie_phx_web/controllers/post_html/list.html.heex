@@ -1,0 +1,133 @@
+<nav>
+  <section id="Searchleft">
+    <h3 data-toggle-sel="#Searchleft" class="shm-toggler">Search</h3>
+    <div class="blockbody">
+      <form action="/post/list" method="GET">
+        <input
+          name="search"
+          type="search"
+          value={@search}
+          class="autocomplete_tags"
+          placeholder="Search posts"
+          autocomplete="off"
+        />
+        <input type="hidden" name="q" value="/post/list" />
+        <input type="submit" value="Go" />
+      </form>
+      <div id="search_completions"></div>
+    </div>
+  </section>
+
+  <%= if @featured_post do %>
+    <section id="Featured_Postleft">
+      <h3 data-toggle-sel="#Featured_Postleft" class=" shm-toggler">Featured Post</h3>
+      <div class="blockbody">
+        <div style="text-align: center;">
+          <a href={"/post/view/#{@featured_post.id}"}>
+            <img
+              id={"thumb_rand_#{@featured_post.id}"}
+              title={@featured_post.tooltip}
+              alt={@featured_post.tooltip}
+              class="highlighted"
+              style={"max-height: #{@featured_post.thumb_height}px; max-width: 100%;"}
+              src={ShimmiePhoenix.Site.Posts.thumb_route(@featured_post)}
+            />
+          </a>
+        </div>
+      </div>
+    </section>
+  <% end %>
+
+  <%= if @popular_tags != [] do %>
+    <section id="Popular_Tagsleft">
+      <h3 data-toggle-sel="#Popular_Tagsleft" class=" shm-toggler">Popular Tags</h3>
+      <div class="blockbody">
+        <table class="tag_list sortable">
+          <colgroup>
+            <col class="tag_info_link_column" />
+            <col class="tag_name_column" />
+            <col class="tag_count_column" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="tag_info_link_cell"></th>
+              <th class="tag_name_cell">Tag</th>
+              <th class="tag_count_cell">#</th>
+            </tr>
+          </thead>
+          <tbody>
+            <%= for row <- @popular_tags do %>
+              <tr>
+                <td class="tag_info_link_cell">
+                  <a class="tag_info_link" href={row.info_link}>?</a>
+                </td>
+                <td class="tag_name_cell">
+                  <a class="tag_name" href={row.href}><%= row.display_name %></a>
+                </td>
+                <td class="tag_count_cell"><span class="tag_count"><%= row.count %></span></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+        &nbsp;<br />
+        <a class="more" href="/tags">Full List</a>
+      </div>
+    </section>
+  <% end %>
+</nav>
+
+<article class="withleft">
+  <section id="image-list">
+    <h3 data-toggle-sel="#image-list" class="">&nbsp;</h3>
+    <div class="blockbody">
+      <%= if @posts == [] do %>
+        <span>No posts were found to match the search criteria.</span>
+      <% else %>
+        <div class="shm-image-list" data-query={@data_query}>
+          <%= for post <- @posts do %>
+            <span class="thumb">
+              <a
+                href={"/post/view/#{post.id}"}
+                class="thumb shm-thumb shm-thumb-link "
+                data-tags={post.data_tags}
+                data-height={post.height}
+                data-width={post.width}
+                data-mime={post.mime}
+                data-post-id={post.id}
+              >
+                <img
+                  id={"thumb_#{post.id}"}
+                  title={post.tooltip}
+                  alt={post.tooltip}
+                  height={post.thumb_height}
+                  width={post.thumb_width}
+                  src={ShimmiePhoenix.Site.Posts.thumb_route(post)}
+                />
+              </a>
+            </span>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </section>
+
+  <section id="paginator-main">
+    <div class="blockbody">
+      <div id="paginator">
+        <%= if @prev_path do %>
+          <a href={@prev_path}>&lt;&lt;</a>
+        <% end %>
+        <%= for page <- @paginator_pages do %>
+          <%= if page.current? do %>
+            <b><%= page.page %></b>
+          <% else %>
+            <a href={page.path}><%= page.page %></a>
+          <% end %>
+        <% end %>
+        <%= if @next_path do %>
+          <a href={@next_path}>&gt;&gt;</a>
+        <% end %>
+      </div>
+    </div>
+  </section>
+</article>

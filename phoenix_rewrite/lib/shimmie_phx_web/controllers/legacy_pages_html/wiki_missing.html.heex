@@ -1,0 +1,30 @@
+<nav>
+  <section id="Navigationleft">
+    <h3 data-toggle-sel="#Navigationleft" class="shm-toggler">Navigation</h3>
+    <div class="blockbody">
+      <a href="/wiki">Wiki Index</a>
+      <%= if @can_edit? do %>
+        <br />
+        <a href={"/wiki/#{URI.encode(@title)}/edit"}>Create This Page</a>
+      <% end %>
+    </div>
+  </section>
+</nav>
+
+<article class="withleft">
+  <section id="Wikimain">
+    <h3 data-toggle-sel="#Wikimain" class="">Wiki: <%= @title %></h3>
+    <div class="blockbody">
+      <%= if @notice do %>
+        <p style="color: #070; font-weight: bold;"><%= @notice %></p>
+      <% end %>
+      <%= if @error do %>
+        <p style="color: #900; font-weight: bold;"><%= @error %></p>
+      <% end %>
+      <p>This page does not exist yet.</p>
+      <%= if @can_edit? do %>
+        <p><a href={"/wiki/#{URI.encode(@title)}/edit"}>Create page</a></p>
+      <% end %>
+    </div>
+  </section>
+</article>

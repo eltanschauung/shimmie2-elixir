@@ -1,0 +1,132 @@
+<article class="noleft">
+  <%= for thread <- @threads do %>
+    <section id="nbspmain">
+      <h3 data-toggle-sel="#nbspmain" class="">&nbsp;</h3>
+      <div class="blockbody">
+        <table>
+          <tr>
+            <td style="width: 220px;">
+              <a
+                href={"/post/view/#{thread.post.id}"}
+                class="thumb shm-thumb shm-thumb-link "
+                data-tags={String.downcase(Enum.join(thread.post.tags, " "))}
+                data-height={thread.post.height}
+                data-width={thread.post.width}
+                data-mime={thread.post.mime}
+                data-post-id={thread.post.id}
+              >
+                <img
+                  id={"thumb_#{thread.post.id}"}
+                  title={thread.post.thumb_tooltip}
+                  alt={thread.post.thumb_tooltip}
+                  height={thread.post.thumb_height}
+                  width={thread.post.thumb_width}
+                  src={thread.post.thumb_url}
+                />
+              </a>
+            </td>
+            <td style="text-align: left;">
+              <b>Date</b>
+              <time datetime={thread.post.posted}>
+                <%= format_post_date(thread.post.posted) %>
+              </time>
+              &nbsp;&nbsp;&nbsp; <b>User</b> <%= thread.post.owner_name %> &nbsp;&nbsp;&nbsp;
+              <b>Rating</b> <%= thread.post.rating_label %><br />
+              <b>Tags</b>
+              <%= for tag <- thread.post.tags do %>
+                <a href={"/post/list/#{URI.encode(tag)}/1"}><%= tag %></a>
+              <% end %>
+              <p>&nbsp;</p>
+              <%= for comment <- thread.comments do %>
+                <table class="comment">
+                  <tr>
+                    <td class="meta">
+                      <a class="username" href={"/user/#{URI.encode(comment.owner_name)}"}>
+                        <%= comment.owner_name %>
+                      </a>
+                      <%= if @can_view_comment_ips and to_string(comment.owner_ip || "") != "" do %>
+                        (<%= comment.owner_ip %><%= if @can_ban_comment_ips do %>, <a href={
+                            "/ip_ban/list?c_ip=#{URI.encode_www_form(comment.owner_ip)}" <>
+                              "&c_reason=#{URI.encode_www_form("Comment posted #{comment.posted}")}" <>
+                              "&c_expires=#{URI.encode_www_form("+1 week")}#create"
+                          }>Ban</a><% end %>)
+                      <% end %>
+                      <br />
+                      <time datetime={comment.posted}>
+                        <%= format_post_date(comment.posted) %>
+                      </time>
+                      -
+                      <a href={"javascript: replyTo(#{thread.post.id}, #{comment.id}, \"#{comment.owner_name}\")"}>
+                        Reply
+                      </a>
+                      <%= if @can_delete_comments do %>
+                        -
+                        <a
+                          href={"/comment/delete/#{comment.id}/#{thread.post.id}"}
+                          onclick="return confirm('Delete this comment?');"
+                        >
+                          Del
+                        </a>
+                      <% end %>
+                    </td>
+                    <td><%= Phoenix.HTML.raw(format_comment_html(comment.comment)) %></td>
+                  </tr>
+                </table>
+              <% end %>
+              <%= if @show_inline_postbox? do %>
+                <div class="comment comment_add">
+                  <form action="/comment/add" method="POST">
+                    <input
+                      type="hidden"
+                      name="_csrf_token"
+                      value={Plug.CSRFProtection.get_csrf_token()}
+                    />
+                    <input type="hidden" name="image_id" value={thread.post.id} />
+                    <input type="hidden" name="hash" value={@comment_form_hash} />
+                    <textarea
+                      id={"comment_on_#{thread.post.id}"}
+                      name="comment"
+                      rows="5"
+                      cols="50"
+                    ></textarea>
+                    <br />
+                    <input type="submit" value="Post Comment" />
+                  </form>
+                </div>
+              <% else %>
+                <%= if @can_create_comments do %>
+                  <a href={"/post/view/#{thread.post.id}"}>Add Comment</a>
+                <% end %>
+              <% end %>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </section>
+  <% end %>
+
+  <section id="paginator-main">
+    <div class="blockbody">
+      <div id="paginator">
+        <%= if @prev_path do %>
+          <a href={@prev_path}>&lt;&lt;</a>
+        <% end %>
+        <%= for item <- @paginator_items do %>
+          <%= case item do %>
+            <% :ellipsis -> %>
+              ...
+            <% {:page, n} -> %>
+              <%= if n == @page do %>
+                <b><%= n %></b>
+              <% else %>
+                <a href={if n == 1, do: "/comment/list", else: "/comment/list/#{n}"}><%= n %></a>
+              <% end %>
+          <% end %>
+        <% end %>
+        <%= if @next_path do %>
+          <a href={@next_path}>&gt;&gt;</a>
+        <% end %>
+      </div>
+    </div>
+  </section>
+</article>

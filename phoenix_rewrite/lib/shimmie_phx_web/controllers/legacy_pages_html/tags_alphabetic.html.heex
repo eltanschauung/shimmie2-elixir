@@ -1,0 +1,25 @@
+<article class="noleft">
+  <section id="Tagsmain">
+    <h3 data-toggle-sel="#Tagsmain" class="">Tags</h3>
+    <div class="blockbody">
+      <span class="atoz">
+        <%= for letter <- @letters do %>
+          <a href={"/tags/alphabetic?starts_with=#{URI.encode_www_form(letter)}"}>
+            <%= letter %>
+          </a>
+        <% end %>
+      </span>
+      <p></p>
+      <hr />
+      <%= for {letter, rows} <- @groups do %>
+        <%= letter %><br />
+        <%= for row <- rows do %>
+          <a href={"/post/list/#{URI.encode(row.tag)}/1"}>
+            <%= String.replace(row.tag, "_", " ") %>
+          </a>
+        <% end %>
+        <br /><br />
+      <% end %>
+    </div>
+  </section>
+</article>

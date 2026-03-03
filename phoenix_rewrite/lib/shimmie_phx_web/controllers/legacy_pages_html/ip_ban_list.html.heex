@@ -1,0 +1,158 @@
+<article class="noleft">
+  <section id="IP_Bansmain">
+    <h3 data-toggle-sel="#IP_Bansmain" class="">Edit IP Bans</h3>
+    <div class="blockbody">
+      <%= if is_binary(@notice) and @notice != "" do %>
+        <p class="notice"><%= @notice %></p>
+      <% end %>
+      <%= if is_binary(@error) and @error != "" do %>
+        <p class="error"><%= @error %></p>
+      <% end %>
+      <p>
+        <a href={@active_path}>Show All Active</a> / <a href={@all_path}>Show EVERYTHING</a>
+      </p>
+      <form action="/ip_ban/bulk" method="POST">
+        <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+        <input type="hidden" name="r__size" value={@limit} />
+        <input type="hidden" name="r__page" value={@page} />
+        <%= if @include_all? do %>
+          <input type="hidden" name="r_all" value="on" />
+        <% end %>
+        <table class="zebra">
+          <thead>
+            <tr>
+              <th></th>
+              <th>ID</th>
+              <th>IP</th>
+              <th>Mode</th>
+              <th style="text-align: left;">Reason</th>
+              <th>Banner</th>
+              <th>Added</th>
+              <th>Expires</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <%= for ban <- @bans do %>
+              <tr>
+                <td><input type="checkbox" name="id[]" value={ban.id} /></td>
+                <td><%= ban.id %></td>
+                <td><%= ban.ip %></td>
+                <td><%= ban.mode %></td>
+                <td style="text-align: left;"><%= ban.reason %></td>
+                <td><%= ban.banner %></td>
+                <td><%= ban.added %></td>
+                <td><%= if ban.expires in [nil, ""], do: "-", else: ban.expires %></td>
+                <td>
+                  <button
+                    type="submit"
+                    name="d_id"
+                    value={ban.id}
+                    formaction="/ip_ban/delete"
+                    formmethod="POST"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            <% end %>
+            <%= if @bans == [] do %>
+              <tr>
+                <td colspan="9">No matching bans found.</td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+        <p>
+          <select name="bulk_action">
+            <option value="delete">Delete</option>
+          </select>
+          <input type="submit" value="Bulk Action" />
+        </p>
+      </form>
+      <div id="paginator">
+        <%= if @prev_path do %>
+          <a href={@prev_path}>&lt;&lt;</a>
+        <% end %>
+        <%= for item <- @paginator_items do %>
+          <%= case item do %>
+            <% :ellipsis -> %>
+              ...
+            <% {:page, n} -> %>
+              <%= if n == @page do %>
+                <b><%= n %></b>
+              <% else %>
+                <a href={@page_path_fn.(n)}><%= n %></a>
+              <% end %>
+          <% end %>
+        <% end %>
+        <%= if @next_path do %>
+          <a href={@next_path}>&gt;&gt;</a>
+        <% end %>
+      </div>
+
+      <h4 id="create">Create Ban</h4>
+      <form action="/ip_ban/create" method="POST">
+        <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+        <input type="hidden" name="r__size" value={@limit} />
+        <input type="hidden" name="r__page" value={@page} />
+        <%= if @include_all? do %>
+          <input type="hidden" name="r_all" value="on" />
+        <% end %>
+        <table class="form">
+          <tbody>
+            <tr>
+              <th><label for="c_ip">IP</label></th>
+              <td><input id="c_ip" type="text" name="c_ip" value={@create_defaults.ip} /></td>
+            </tr>
+            <tr>
+              <th><label for="c_mode">Mode</label></th>
+              <td>
+                <select id="c_mode" name="c_mode">
+                  <option value="block" selected={@create_defaults.mode == "block"}>Block</option>
+                  <option value="firewall" selected={@create_defaults.mode == "firewall"}>
+                    Firewall
+                  </option>
+                  <option value="ghost" selected={@create_defaults.mode == "ghost"}>Ghost</option>
+                  <option value="anon-ghost" selected={@create_defaults.mode == "anon-ghost"}>
+                    Anon Ghost
+                  </option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <th><label for="c_reason">Reason</label></th>
+              <td>
+                <input id="c_reason" type="text" name="c_reason" value={@create_defaults.reason} />
+              </td>
+            </tr>
+            <tr>
+              <th><label for="c_expires">Expires</label></th>
+              <td>
+                <input
+                  id="c_expires"
+                  type="text"
+                  name="c_expires"
+                  value={@create_defaults.expires}
+                  placeholder="+1 week or YYYY-MM-DD HH:MM:SS"
+                />
+              </td>
+            </tr>
+            <tr>
+              <th>Banner</th>
+              <td><%= @create_defaults.banner %></td>
+            </tr>
+            <tr>
+              <th>Added</th>
+              <td><%= @create_defaults.added %></td>
+            </tr>
+            <tr>
+              <th></th>
+              <td><input type="submit" value="Add Ban" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </form>
+    </div>
+  </section>
+</article>

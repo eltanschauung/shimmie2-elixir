@@ -1,0 +1,53 @@
+<nav>
+  <section id="Navigationleft">
+    <h3 data-toggle-sel="#Navigationleft" class="shm-toggler">Navigation</h3>
+    <div class="blockbody">
+      <a href={"/wiki/#{URI.encode(@title)}"}>Back to Page</a>
+      <%= if @can_revert? do %>
+        <br />
+        <a href={"/wiki/#{URI.encode(@title)}/revert"}>Revert</a>
+      <% end %>
+    </div>
+  </section>
+</nav>
+
+<article class="withleft">
+  <section id="Wiki_Historymain">
+    <h3 data-toggle-sel="#Wiki_Historymain" class="">Wiki History: <%= @title %></h3>
+    <div class="blockbody">
+      <%= if @notice do %>
+        <p style="color: #070; font-weight: bold;"><%= @notice %></p>
+      <% end %>
+      <%= if @error do %>
+        <p style="color: #900; font-weight: bold;"><%= @error %></p>
+      <% end %>
+
+      <table class="zebra">
+        <thead>
+          <tr>
+            <th>Revision</th>
+            <th>Date</th>
+            <%= if @can_revert? do %>
+              <th>Action</th>
+            <% end %>
+          </tr>
+        </thead>
+        <tbody>
+          <%= for [revision, date] <- @history do %>
+            <tr>
+              <td>
+                <a href={"/wiki/#{URI.encode(@title)}?revision=#{revision}"}><%= revision %></a>
+              </td>
+              <td><%= date %></td>
+              <%= if @can_revert? do %>
+                <td>
+                  <a href={"/wiki/#{URI.encode(@title)}/revert?revision=#{revision}"}>Revert</a>
+                </td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</article>

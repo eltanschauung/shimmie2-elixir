@@ -1,0 +1,112 @@
+<nav>
+  <section id="Navigationleft">
+    <h3 data-toggle-sel="#Navigationleft" class=" shm-toggler">Navigation</h3>
+    <div class="blockbody"><a href="/post/list">Index</a></div>
+  </section>
+</nav>
+
+<article class="withleft">
+  <section id="Usersmain">
+    <h3 data-toggle-sel="#Usersmain" class="">User List</h3>
+    <div class="blockbody">
+      <%= if @notice do %>
+        <p><%= @notice %></p>
+      <% end %>
+      <%= if @error do %>
+        <p><%= @error %></p>
+      <% end %>
+
+      <table class="zebra">
+        <thead id="read">
+          <tr>
+            <th><a href={@sort_paths.id}>ID</a></th>
+            <th><a href={@sort_paths.name}>Name</a></th>
+            <%= if @email_enabled? do %>
+              <th><a href={@sort_paths.email}>Email</a></th>
+            <% end %>
+            <th><a href={@sort_paths.class}>Class</a></th>
+            <th><a href={@sort_paths.joindate}>Join Date</a></th>
+            <th>Action</th>
+          </tr>
+          <form method="GET" action="/user_admin/list">
+            <tr>
+              <td><input type="text" name="r_id" placeholder="ID" value={@filters.r_id} /></td>
+              <td>
+                <input type="text" name="r_name" placeholder="Name" value={@filters.r_name} />
+              </td>
+              <%= if @email_enabled? do %>
+                <td>
+                  <input type="text" name="r_email" placeholder="Email" value={@filters.r_email} />
+                </td>
+              <% end %>
+              <td>
+                <select name="r_class">
+                  <option value="">-</option>
+                  <%= for class_name <- @classes do %>
+                    <option value={class_name} selected={class_name == @filters.r_class}>
+                      <%= class_name %>
+                    </option>
+                  <% end %>
+                </select>
+              </td>
+              <td>
+                <input type="date" name="r_joindate[]" value={Enum.at(@filters.r_joindate, 0)} /><br />
+                <input type="date" name="r_joindate[]" value={Enum.at(@filters.r_joindate, 1)} />
+              </td>
+              <td>
+                <input type="hidden" name="r__size" />
+                <input type="hidden" name="r__page" value="1" />
+                <button type="submit">Search</button>
+              </td>
+            </tr>
+            <input type="hidden" name="q" value="user_admin/list" />
+            <%= if @sort != "id" do %>
+              <input type="hidden" name="r__sort" value={@sort} />
+            <% end %>
+          </form>
+        </thead>
+        <tbody id="update">
+          <%= for row <- @users do %>
+            <tr>
+              <td><%= row.id %></td>
+              <td><a href={"/user/#{URI.encode(row.name)}"}><%= row.name %></a></td>
+              <%= if @email_enabled? do %>
+                <td><%= row.email %></td>
+              <% end %>
+              <td><%= row.class %></td>
+              <td><%= row.join_date %></td>
+              <td><a href={"/post/list/user=#{URI.encode(row.name)}/1"}>Posts</a></td>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot id="create"></tfoot>
+      </table>
+
+      <div>
+        <%= if @first_path do %>
+          <a href={@first_path}>First</a> | <a href={@prev_path}>Prev</a> |
+        <% else %>
+          First | Prev |
+        <% end %>
+        -
+        <%= if @next_path do %>
+          | <a href={@next_path}>Next</a> | <a href={@last_path}>Last</a>
+        <% else %>
+          | Next | Last
+        <% end %>
+        <br /> &lt;&lt;
+        <%= for page <- @page_links do %>
+          <%= if page.current? do %>
+            <b><a href={page.path}><%= page.page %></a></b>
+          <% else %>
+            <a href={page.path}><%= page.page %></a>
+          <% end %>
+          <%= if page.page != List.last(@page_links).page do %>
+            |
+          <% end %>
+        <% end %>
+        &gt;&gt;
+      </div>
+    </div>
+  </section>
+</article>

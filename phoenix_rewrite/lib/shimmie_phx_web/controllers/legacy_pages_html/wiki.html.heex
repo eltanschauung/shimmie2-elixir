@@ -1,0 +1,40 @@
+<nav>
+  <section id="Navigationleft">
+    <h3 data-toggle-sel="#Navigationleft" class="shm-toggler">Navigation</h3>
+    <div class="blockbody">
+      <a href="/wiki">Wiki Index</a>
+      <br />
+      <a href={"/wiki/#{URI.encode(@page.title)}/history"}>History</a>
+      <%= if @can_edit? do %>
+        <br />
+        <a href={"/wiki/#{URI.encode(@page.title)}/edit"}>Edit</a>
+      <% end %>
+      <%= if @can_admin? do %>
+        <br />
+        <a href={"/wiki/#{URI.encode(@page.title)}/revert"}>Revert</a>
+        <br />
+        <a href={"/wiki/#{URI.encode(@page.title)}/delete"}>Delete</a>
+      <% end %>
+    </div>
+  </section>
+</nav>
+
+<article class="withleft">
+  <section id="Wikimain">
+    <h3 data-toggle-sel="#Wikimain" class="">Wiki: <%= @page.title %></h3>
+    <div class="blockbody wiki-page">
+      <%= if @notice do %>
+        <p style="color: #070; font-weight: bold;"><%= @notice %></p>
+      <% end %>
+      <%= if @error do %>
+        <p style="color: #900; font-weight: bold;"><%= @error %></p>
+      <% end %>
+      <pre><%= @page.body %></pre>
+      <hr />
+      <p class="wiki-footer">
+        <a href={"/wiki/#{URI.encode(@page.title)}/history"}>Revision <%= @page.revision %></a>
+        at <%= @page.date %>
+      </p>
+    </div>
+  </section>
+</article>

@@ -1,0 +1,10 @@
+<nav></nav>
+
+<article class="withleft">
+  <%= for section <- @sections do %>
+    <section id={section.id}>
+      <h3 data-toggle-sel={"##{section.id}"} class=""><%= section.title %></h3>
+      <div class="blockbody"><%= raw(section.body_html) %></div>
+    </section>
+  <% end %>
+</article>

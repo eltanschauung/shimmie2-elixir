@@ -1,0 +1,311 @@
+<nav>
+  <section id="Navigationleft">
+    <h3 data-toggle-sel="#Navigationleft" class="shm-toggler">Navigation</h3>
+    <div class="blockbody">
+      <a href="/">Index</a>
+      <br /><a href="https://github.com/shish/shimmie2/wiki/Settings">Help</a>
+    </div>
+  </section>
+</nav>
+
+<article class="withleft">
+  <section id="Setupmain">
+    <h3 data-toggle-sel="#Setupmain" class="">Setup</h3>
+    <div class="blockbody">
+      <%= if @notice do %>
+        <p style="color: #070; font-weight: bold; margin: 0 0 12px;"><%= @notice %></p>
+      <% end %>
+      <%= if @error do %>
+        <p style="color: #900; font-weight: bold; margin: 0 0 12px;"><%= @error %></p>
+      <% end %>
+      <.form for={%{}} action="/setup/save" method="post">
+        <div class="setupblocks">
+          <%= for section <- @setup_sections do %>
+            <section class="setupblock">
+              <b class="shm-toggler" data-toggle-sel={"##{section.dom_id}"}>
+                <%= section.title %>
+              </b>
+              <br />
+              <div id={section.dom_id}>
+                <%= if section.layout == :table do %>
+                  <table class="form">
+                    <tbody>
+                      <%= for field <- section.fields do %>
+                        <%= if Map.get(field, :kind) in [:label, :nicetest] do %>
+                        <% else %>
+                          <%= if field.input == :bool_compact do %>
+                            <tr>
+                              <th style="text-align: right"></th>
+                              <td>
+                                <input type="hidden" name={"_config_#{field.name}"} value="0" />
+                                <input
+                                  type="checkbox"
+                                  id={field.name}
+                                  name={"_config_#{field.name}"}
+                                  value="1"
+                                  checked={
+                                    String.downcase(to_string(field.value)) in [
+                                      "1",
+                                      "true",
+                                      "on",
+                                      "yes",
+                                      "y",
+                                      "t"
+                                    ]
+                                  }
+                                />
+                                <label for={field.name}><%= field.label %></label>
+                                <input
+                                  type="hidden"
+                                  name={"_type_#{field.name}"}
+                                  value={field.type}
+                                />
+                              </td>
+                            </tr>
+                          <% else %>
+                            <tr>
+                              <th style="text-align: right">
+                                <label for={field.name}><%= field.label %></label>
+                              </th>
+                              <td>
+                                <%= cond do %>
+                                  <% field.input == :select -> %>
+                                    <select id={field.name} name={"_config_#{field.name}"}>
+                                      <%= for option <- field.options || [] do %>
+                                        <option
+                                          value={option.value}
+                                          selected={
+                                            to_string(field.value) == to_string(option.value)
+                                          }
+                                        >
+                                          <%= option.label %>
+                                        </option>
+                                      <% end %>
+                                    </select>
+                                  <% field.input == :number -> %>
+                                    <input
+                                      type="number"
+                                      id={field.name}
+                                      name={"_config_#{field.name}"}
+                                      value={field.value}
+                                      step="1"
+                                      style="text-align: center;"
+                                    />
+                                  <% true -> %>
+                                    <input
+                                      type="text"
+                                      id={field.name}
+                                      name={"_config_#{field.name}"}
+                                      value={field.value}
+                                    />
+                                <% end %>
+                                <input
+                                  type="hidden"
+                                  name={"_type_#{field.name}"}
+                                  value={field.type}
+                                />
+                              </td>
+                            </tr>
+                          <% end %>
+                        <% end %>
+                      <% end %>
+                    </tbody>
+                  </table>
+                <% else %>
+                  <%= if section.dom_id == "Other_Settings-setup" do %>
+                    <div class="other-settings-grid">
+                      <%= for field <- section.fields do %>
+                        <%= if Map.get(field, :kind) in [:label, :nicetest] do %>
+                          <%= if Map.get(field, :kind) == :label do %>
+                            <%= Phoenix.HTML.raw(field.html) %>
+                          <% end %>
+                        <% else %>
+                          <div class="other-settings-row">
+                            <label class="other-settings-label" for={field.name}>
+                              <%= field.label %>
+                            </label>
+                            <div class="other-settings-input">
+                              <%= cond do %>
+                                <% field.input == :select -> %>
+                                  <select id={field.name} name={"_config_#{field.name}"}>
+                                    <%= for option <- field.options || [] do %>
+                                      <option
+                                        value={option.value}
+                                        selected={
+                                          to_string(field.value) == to_string(option.value)
+                                        }
+                                      >
+                                        <%= option.label %>
+                                      </option>
+                                    <% end %>
+                                  </select>
+                                <% field.input == :bool -> %>
+                                  <input type="hidden" name={"_config_#{field.name}"} value="0" />
+                                  <input
+                                    type="checkbox"
+                                    id={field.name}
+                                    name={"_config_#{field.name}"}
+                                    value="1"
+                                    checked={
+                                      String.downcase(to_string(field.value)) in [
+                                        "1",
+                                        "true",
+                                        "on",
+                                        "yes",
+                                        "y",
+                                        "t"
+                                      ]
+                                    }
+                                  />
+                                <% field.input == :number -> %>
+                                  <input
+                                    type="number"
+                                    id={field.name}
+                                    name={"_config_#{field.name}"}
+                                    value={field.value}
+                                    step="1"
+                                    style="text-align: center;"
+                                  />
+                                <% field.input == :textarea -> %>
+                                  <textarea
+                                    rows={field.rows || 4}
+                                    id={field.name}
+                                    name={"_config_#{field.name}"}
+                                  ><%= field.value %></textarea>
+                                <% true -> %>
+                                  <input
+                                    type="text"
+                                    id={field.name}
+                                    name={"_config_#{field.name}"}
+                                    value={field.value}
+                                  />
+                              <% end %>
+                              <input
+                                type="hidden"
+                                name={"_type_#{field.name}"}
+                                value={field.type}
+                              />
+                            </div>
+                          </div>
+                        <% end %>
+                      <% end %>
+                    </div>
+                  <% else %>
+                    <%= for field <- section.fields do %>
+                      <%= cond do %>
+                        <% Map.get(field, :kind) == :label -> %>
+                          <%= Phoenix.HTML.raw(field.html) %>
+                        <% Map.get(field, :kind) == :nicetest -> %>
+                          <span title="/nicetest" id="nicetest">
+                            (Javascript inactive, can't test!)
+                          </span>
+                          <script type="text/javascript">
+                            checkbox = document.getElementById('nice_urls');
+                            out_span = document.getElementById('nicetest');
+                            checkbox.disabled = true;
+                            out_span.innerHTML = '(testing...)';
+                            document.addEventListener('DOMContentLoaded', () => {
+                              var http_request = new XMLHttpRequest();
+                              http_request.open('GET', '/nicetest', false);
+                              http_request.send(null);
+                              if(http_request.status === 200 && http_request.responseText === 'ok') {
+                                checkbox.disabled = false;
+                                out_span.innerHTML = '(tested ok)';
+                              }
+                              else {
+                                checkbox.disabled = true;
+                                out_span.innerHTML = '(test failed)';
+                              }
+                            });
+                          </script>
+                        <% field.input == :inline_number -> %>
+                          Show
+                          <input
+                            type="number"
+                            id={field.name}
+                            name={"_config_#{field.name}"}
+                            value={field.value}
+                            size="4"
+                            step="1"
+                            style="text-align: center;"
+                          />
+                          <input type="hidden" name={"_type_#{field.name}"} value={field.type} />
+                          <%= " " <> field.label %>
+                        <% true -> %>
+                          <%= if field.leading_break? do %>
+                            <br />
+                          <% end %>
+                          <%= if field.label do %>
+                            <label for={field.name}><%= field.label %></label>
+                            <%= if Map.get(field, :label_sub) do %>
+                              <br />
+                              <%= field.label_sub %>
+                            <% end %>
+                          <% end %>
+                          <%= cond do %>
+                            <% field.input == :select -> %>
+                              <select id={field.name} name={"_config_#{field.name}"}>
+                                <%= for option <- field.options || [] do %>
+                                  <option
+                                    value={option.value}
+                                    selected={to_string(field.value) == to_string(option.value)}
+                                  >
+                                    <%= option.label %>
+                                  </option>
+                                <% end %>
+                              </select>
+                            <% field.input == :bool -> %>
+                              <input type="hidden" name={"_config_#{field.name}"} value="0" />
+                              <input
+                                type="checkbox"
+                                id={field.name}
+                                name={"_config_#{field.name}"}
+                                value="1"
+                                checked={
+                                  String.downcase(to_string(field.value)) in [
+                                    "1",
+                                    "true",
+                                    "on",
+                                    "yes",
+                                    "y",
+                                    "t"
+                                  ]
+                                }
+                              />
+                            <% field.input == :number -> %>
+                              <input
+                                type="number"
+                                id={field.name}
+                                name={"_config_#{field.name}"}
+                                value={field.value}
+                                step="1"
+                                style="text-align: center;"
+                              />
+                            <% field.input == :textarea -> %>
+                              <textarea
+                                rows={field.rows || 4}
+                                id={field.name}
+                                name={"_config_#{field.name}"}
+                              ><%= field.value %></textarea>
+                            <% true -> %>
+                              <input
+                                type="text"
+                                id={field.name}
+                                name={"_config_#{field.name}"}
+                                value={field.value}
+                              />
+                          <% end %>
+                          <input type="hidden" name={"_type_#{field.name}"} value={field.type} />
+                      <% end %>
+                    <% end %>
+                  <% end %>
+                <% end %>
+              </div>
+            </section>
+          <% end %>
+        </div>
+        <input type="submit" value="Save Settings" />
+      </.form>
+    </div>
+  </section>
+</article>

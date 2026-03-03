@@ -1,0 +1,60 @@
+<div id="front-page">
+  <h1>
+    <a style={@home_title_style} href="/post/list"><span><%= @home_title %></span></a>
+  </h1>
+  <img
+    class="litecustom-logo"
+    src={@logo_path}
+    fetchpriority="high"
+    loading="eager"
+    decoding="sync"
+    width={if(@logo_dimensions, do: elem(@logo_dimensions, 0), else: nil)}
+    height={if(@logo_dimensions, do: elem(@logo_dimensions, 1), else: nil)}
+  />
+
+  <div class="space" id="links">
+    <%= for link <- @main_links do %>
+      <a href={link.href}><%= link.label %></a>
+    <% end %>
+  </div>
+
+  <div class="space" id="search">
+    <form action="/post/list" method="GET">
+      <input
+        name="search"
+        size="30"
+        type="search"
+        value=""
+        class="autocomplete_tags"
+        placeholder="Search for posts..."
+        autofocus
+        autocomplete="off"
+      />
+      <input type="hidden" name="q" value="/post/list" />
+      <input type="submit" value="Search" />
+    </form>
+  </div>
+
+  <div class="space" id="message"><%= Phoenix.HTML.raw(@home_text || "") %></div>
+
+  <%= if @counter_mode not in [nil, "", "none", "text-only"] do %>
+    <div class="space" id="counter">
+      <%= for digit <- @counter_digits do %>
+        <img alt={digit} src={"/ext/home/counters/#{@counter_mode}/#{digit}.gif"} />
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="space" id="foot">
+    <small>
+      <small>
+        <%= if @contact_href do %>
+          <br />
+          <a href={@contact_href}>Contact</a> &ndash;
+        <% end %>
+        Serving <%= @post_count_human %> posts &ndash; Running
+        <a href="https://code.shishnet.org/shimmie2/">Shimmie2</a>
+      </small>
+    </small>
+  </div>
+</div>

@@ -1,0 +1,37 @@
+<article class="noleft">
+  <section id="PMMessagemain">
+    <h3 data-toggle-sel="#PMMessagemain" class="">Message from <%= @from_name %></h3>
+    <div class="blockbody">
+      <p><b>Sent:</b> <%= @sent_date %></p>
+      <div><%= raw(format_comment_html(@pm.message)) %></div>
+    </div>
+  </section>
+
+  <%= if @can_reply? do %>
+    <section id="WritePMmain">
+      <h3 data-toggle-sel="#WritePMmain" class="">Write a PM</h3>
+      <div class="blockbody">
+        <form action="/pm/send" method="POST">
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+          <input type="hidden" name="to_id" value={@pm.from_id} />
+          <table style="width: 400px;" class="form">
+            <tbody>
+              <tr>
+                <th>Subject:</th>
+                <td><input type="text" name="subject" value={"Re: #{@pm.subject}"} /></td>
+              </tr>
+              <tr>
+                <td colspan="2">
+                  <textarea style="width: 100%" rows="6" name="message"></textarea>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2"><input type="submit" value="Send" /></td>
+              </tr>
+            </tbody>
+          </table>
+        </form>
+      </div>
+    </section>
+  <% end %>
+</article>

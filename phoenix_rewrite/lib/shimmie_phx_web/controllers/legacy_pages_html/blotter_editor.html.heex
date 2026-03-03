@@ -1,0 +1,27 @@
+<article class="noleft">
+  <section id="Blotter_Editormain">
+    <h3 data-toggle-sel="#Blotter_Editormain" class="">Blotter Editor</h3>
+    <div class="blockbody">
+      <table class="zebra">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Message</th>
+            <th>Important</th>
+          </tr>
+        </thead>
+        <tbody>
+          <%= for [id, entry_date, entry_text, important] <- @entries do %>
+            <tr id={"blotter_#{id}"}>
+              <td><%= format_post_date(entry_date) %></td>
+              <td style="text-align: left;"><%= entry_text %></td>
+              <td>
+                <%= if to_string(important) in ["1", "t", "true", "TRUE"], do: "Yes", else: "No" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</article>

@@ -1,0 +1,333 @@
+<article class="noleft">
+  <%= if @notice do %>
+    <p style="color: #070; font-weight: bold;"><%= @notice %></p>
+  <% end %>
+  <%= if @error do %>
+    <p style="color: #900; font-weight: bold;"><%= @error %></p>
+  <% end %>
+
+  <section id="Statsmain">
+    <h3 data-toggle-sel="#Statsmain" class="">Stats</h3>
+    <div class="blockbody">
+      Joined: <%= format_post_date(@display_user.join_date) %><br />
+      <%= if @current_user && @current_user.id == @display_user.id do %>
+        Current IP: <%= @current_ip %><br />
+      <% end %>
+      Class: <%= @display_user.class %><br /> User ID: <%= @display_user.id %>
+    </div>
+  </section>
+
+  <section id="about-me">
+    <h3 data-toggle-sel="#about-me" class="">About Me</h3>
+    <div class="blockbody">
+      <%= if @can_edit_bio? do %>
+        <form action="/biography" method="POST">
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+          <textarea style="width: 100%" rows="6" name="biography"><%= @biography %></textarea>
+          <input type="submit" value="Save" />
+        </form>
+      <% else %>
+        <%= raw(format_comment_html(@biography || "")) %>
+      <% end %>
+    </div>
+  </section>
+
+  <%= if @can_read_pm? do %>
+    <section id="private-messages">
+      <h3 data-toggle-sel="#private-messages" class="">Private Messages</h3>
+      <div class="blockbody">
+        <table id="pms" class="zebra">
+          <thead>
+            <tr>
+              <th>R?</th>
+              <th>Subject</th>
+              <th>From</th>
+              <th>Date</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <%= for pm <- @private_messages do %>
+              <tr>
+                <td><%= if pm.is_read, do: "Y", else: "N" %></td>
+                <td>
+                  <a href={"/pm/read/#{pm.id}"}>
+                    <%= if pm.is_read do %>
+                      <%= pm.subject %>
+                    <% else %>
+                      <b><%= pm.subject %></b>
+                    <% end %>
+                  </a>
+                </td>
+                <td><a href={"/user/#{URI.encode(pm.from_name)}"}><%= pm.from_name %></a></td>
+                <td><%= String.slice(to_string(pm.sent_date), 0, 16) %></td>
+                <td>
+                  <form action="/pm/delete" method="POST">
+                    <input
+                      type="hidden"
+                      name="_csrf_token"
+                      value={Plug.CSRFProtection.get_csrf_token()}
+                    />
+                    <input type="hidden" name="pm_id" value={pm.id} />
+                    <input type="submit" value="Delete" />
+                  </form>
+                </td>
+              </tr>
+            <% end %>
+            <%= if Enum.empty?(@private_messages) do %>
+              <tr>
+                <td colspan="5">No private messages.</td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  <% end %>
+
+  <%= if @can_send_pm? do %>
+    <section id="WritePMmain">
+      <h3 data-toggle-sel="#WritePMmain" class="">Write a PM</h3>
+      <div class="blockbody">
+        <form action="/pm/send" method="POST">
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+          <input type="hidden" name="to_id" value={@display_user.id} />
+          <table style="width: 400px;" class="form">
+            <tbody>
+              <tr>
+                <th>Subject:</th>
+                <td><input type="text" name="subject" value="" /></td>
+              </tr>
+              <tr>
+                <td colspan="2">
+                  <textarea style="width: 100%" rows="6" name="message"></textarea>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2"><input type="submit" value="Send" /></td>
+              </tr>
+            </tbody>
+          </table>
+        </form>
+      </div>
+    </section>
+  <% end %>
+
+  <%= if @can_edit? do %>
+    <section id="Operationsmain">
+      <h3 data-toggle-sel="#Operationsmain" class="">Operations</h3>
+      <div class="blockbody">
+        <form action="/user_admin/change_name" method="POST">
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+          <input type="hidden" name="q" value="user_admin/change_name" />
+          <input type="hidden" name="id" value={@display_user.id} />
+          <table class="form">
+            <thead>
+              <tr>
+                <th colspan="2">Change Name</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>New name</th>
+                <td><input type="text" name="name" value={@display_user.name} /></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="2"><input type="submit" value="Set" style="width: 100%;" /></td>
+              </tr>
+            </tfoot>
+          </table>
+        </form>
+
+        <form action="/user_admin/change_pass" method="POST">
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+          <input type="hidden" name="q" value="user_admin/change_pass" />
+          <input type="hidden" name="id" value={@display_user.id} />
+          <table class="form">
+            <thead>
+              <tr>
+                <th colspan="2">Change Password</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>Password</th>
+                <td><input type="password" name="pass1" autocomplete="new-password" /></td>
+              </tr>
+              <tr>
+                <th>Repeat Password</th>
+                <td><input type="password" name="pass2" autocomplete="new-password" /></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="2"><input type="submit" value="Set" style="width: 100%;" /></td>
+              </tr>
+            </tfoot>
+          </table>
+        </form>
+
+        <form action="/user_admin/change_email" method="POST">
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+          <input type="hidden" name="q" value="user_admin/change_email" />
+          <input type="hidden" name="id" value={@display_user.id} />
+          <table class="form">
+            <thead>
+              <tr>
+                <th colspan="2">Change Email</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>Address</th>
+                <td><input type="email" name="address" value={@display_user.email || ""} /></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="2"><input type="submit" value="Set" style="width: 100%;" /></td>
+              </tr>
+            </tfoot>
+          </table>
+        </form>
+
+        <%= if @show_admin_ops? do %>
+          <form action="/user_admin/change_class" method="POST">
+            <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+            <input type="hidden" name="q" value="user_admin/change_class" />
+            <input type="hidden" name="id" value={@display_user.id} />
+            <table class="form">
+              <thead>
+                <tr>
+                  <th colspan="2">Change Class</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="2">
+                    <select name="class">
+                      <%= for class_name <- @class_options do %>
+                        <option value={class_name} selected={class_name == @display_user.class}>
+                          <%= class_name %>
+                        </option>
+                      <% end %>
+                    </select>
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="2"><input type="submit" value="Set" style="width: 100%;" /></td>
+                </tr>
+              </tfoot>
+            </table>
+          </form>
+        <% end %>
+
+        <%= if @show_admin_ops? and @display_user.id != @anonymous_id do %>
+          <form action="/user_admin/delete_user" method="POST">
+            <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+            <input type="hidden" name="q" value="user_admin/delete_user" />
+            <input type="hidden" name="id" value={@display_user.id} />
+            <table class="form">
+              <thead>
+                <tr>
+                  <th colspan="2">Delete User</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="2">
+                    <label><input type="checkbox" name="with_images" /> Delete images</label>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2">
+                    <label>
+                      <input type="checkbox" name="with_comments" /> Delete comments
+                    </label>
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="2">
+                    <input
+                      type="button"
+                      class="shm-unlocker"
+                      data-unlock-sel=".deluser"
+                      value="Unlock"
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2">
+                    <input type="submit" class="deluser" value="Delete User" disabled="true" />
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </form>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
+  <%= if @can_view_ips? do %>
+    <section id="IPsmain">
+      <h3 data-toggle-sel="#IPsmain" class="">IPs</h3>
+      <div class="blockbody">
+        <% uploads = @ip_history.uploads || [] %>
+        <% comments = @ip_history.comments || [] %>
+        <% events = @ip_history.events || [] %>
+        <% has_events = events != [] %>
+        <table id="ip-history" style="width: 400px;">
+          <tbody>
+            <tr>
+              <td>
+                Uploaded from:
+                <%= for {entry, index} <- Enum.with_index(uploads) do %>
+                  <%= if index < 20 do %>
+                    <br /><%= entry.ip %> (<%= entry.count %>)
+                  <% end %>
+                <% end %>
+                <%= if length(uploads) > 20 do %>
+                  <br />...
+                <% end %>
+              </td>
+              <td>
+                Commented from:
+                <%= for {entry, index} <- Enum.with_index(comments) do %>
+                  <%= if index < 20 do %>
+                    <br /><%= entry.ip %> (<%= entry.count %>)
+                  <% end %>
+                <% end %>
+                <%= if length(comments) > 20 do %>
+                  <br />...
+                <% end %>
+              </td>
+              <%= if has_events do %>
+                <td>
+                  Logged Events:
+                  <%= for {entry, index} <- Enum.with_index(events) do %>
+                    <%= if index < 20 do %>
+                      <br /><%= entry.ip %> (<%= entry.count %>)
+                    <% end %>
+                  <% end %>
+                  <%= if length(events) > 20 do %>
+                    <br />...
+                  <% end %>
+                </td>
+              <% end %>
+            </tr>
+            <tr>
+              <td colspan={if(has_events, do: "3", else: "2")}>(Most recent at top)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  <% end %>
+</article>

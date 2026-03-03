@@ -1,0 +1,81 @@
+<nav>
+  <section id="Navigationleft">
+    <h3 data-toggle-sel="#Navigationleft" class="shm-toggler">Navigation</h3>
+    <div class="blockbody">
+      <a href="/post/list">Index</a>
+      <br />
+      <a href="/tags/map">Tag List</a>
+    </div>
+  </section>
+</nav>
+
+<article class="withleft">
+  <section id="Auto_Tagmain">
+    <h3 data-toggle-sel="#Auto_Tagmain" class="">Auto-Tag List</h3>
+    <div class="blockbody">
+      <%= if @notice do %>
+        <p style="color: #070; font-weight: bold;"><%= @notice %></p>
+      <% end %>
+      <%= if @error do %>
+        <p style="color: #900; font-weight: bold;"><%= @error %></p>
+      <% end %>
+
+      <table class="zebra">
+        <thead>
+          <tr>
+            <th>Tag</th>
+            <th>Additional Tags</th>
+            <%= if @can_manage? do %>
+              <th>Action</th>
+            <% end %>
+          </tr>
+        </thead>
+        <tbody>
+          <%= if @rows == [] do %>
+            <tr>
+              <td colspan={if @can_manage?, do: 3, else: 2}>No auto-tag rules configured.</td>
+            </tr>
+          <% end %>
+          <%= for row <- @rows do %>
+            <tr>
+              <td><%= row.tag %></td>
+              <td><%= row.additional_tags %></td>
+              <%= if @can_manage? do %>
+                <td>
+                  <.form for={%{}} action="/auto_tag/remove" method="post" style="margin: 0;">
+                    <input type="hidden" name="d_tag" value={row.tag} />
+                    <input type="submit" value="Delete" />
+                  </.form>
+                </td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+
+      <%= if @can_manage? do %>
+        <h4>Add / Update Rule</h4>
+        <.form for={%{}} action="/auto_tag/add" method="post">
+          <table class="form">
+            <tbody>
+              <tr>
+                <th><label for="c_tag">Tag</label></th>
+                <td><input id="c_tag" name="c_tag" type="text" required /></td>
+              </tr>
+              <tr>
+                <th><label for="c_additional_tags">Additional Tags</label></th>
+                <td>
+                  <input id="c_additional_tags" name="c_additional_tags" type="text" required />
+                </td>
+              </tr>
+              <tr>
+                <th></th>
+                <td><input type="submit" value="Save" /></td>
+              </tr>
+            </tbody>
+          </table>
+        </.form>
+      <% end %>
+    </div>
+  </section>
+</article>

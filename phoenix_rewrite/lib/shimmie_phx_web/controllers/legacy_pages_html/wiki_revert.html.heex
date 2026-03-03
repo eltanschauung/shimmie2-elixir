@@ -1,0 +1,43 @@
+<nav>
+  <section id="Navigationleft">
+    <h3 data-toggle-sel="#Navigationleft" class="shm-toggler">Navigation</h3>
+    <div class="blockbody">
+      <a href={"/wiki/#{URI.encode(@title)}"}>Back to Page</a>
+      <br />
+      <a href={"/wiki/#{URI.encode(@title)}/history"}>History</a>
+    </div>
+  </section>
+</nav>
+
+<article class="withleft">
+  <section id="Wikimain">
+    <h3 data-toggle-sel="#Wikimain" class="">Revert Wiki: <%= @title %></h3>
+    <div class="blockbody">
+      <%= if @notice do %>
+        <p style="color: #070; font-weight: bold;"><%= @notice %></p>
+      <% end %>
+      <%= if @error do %>
+        <p style="color: #900; font-weight: bold;"><%= @error %></p>
+      <% end %>
+
+      <%= if @history == [] do %>
+        <p>No revisions are available to revert.</p>
+      <% else %>
+        <.form for={%{}} action={"/wiki/#{URI.encode(@title)}/revert"} method="post">
+          <label for="revision">Revision:</label>
+          <select id="revision" name="revision">
+            <%= for [revision, date] <- @history do %>
+              <option
+                value={revision}
+                selected={to_string(revision) == to_string(@selected_revision)}
+              >
+                <%= revision %> - <%= date %>
+              </option>
+            <% end %>
+          </select>
+          <input type="submit" value="Revert" />
+        </.form>
+      <% end %>
+    </div>
+  </section>
+</article>
