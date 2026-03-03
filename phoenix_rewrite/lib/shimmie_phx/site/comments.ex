@@ -5,7 +5,7 @@ defmodule ShimmiePhoenix.Site.Comments do
 
   alias ShimmiePhoenix.Site
   alias ShimmiePhoenix.Site.Store
-  alias ShimmiePhoenix.Site.TelegramAlerts
+  alias ShimmiePhoenix.Site.TagEdit
   alias ShimmiePhoenix.Site.Users
   alias ShimmiePhoenix.Repo
 
@@ -17,32 +17,35 @@ defmodule ShimmiePhoenix.Site.Comments do
   @ban_ip_classes MapSet.new(["admin"])
   @deny_create_comment_classes MapSet.new(["ghost"])
 
-  def can_delete_comment?(%{id: id, class: class}) when is_integer(id) and id > 0 do
-    class |> normalize_class() |> then(&MapSet.member?(@delete_comment_classes, &1))
+  def can_delete_comment?(actor) do
+    actor_id(actor) > 0 and
+      (actor
+       |> actor_class()
+       |> then(&MapSet.member?(@delete_comment_classes, &1)))
   end
-
-  def can_delete_comment?(_), do: false
 
   def can_create_comment?(actor) do
     not ghost_actor?(actor)
   end
 
-  def can_view_ip?(%{id: id, class: class}) when is_integer(id) and id > 0 do
-    class |> normalize_class() |> then(&MapSet.member?(@view_ip_classes, &1))
+  def can_view_ip?(actor) do
+    actor_id(actor) > 0 and
+      (actor
+       |> actor_class()
+       |> then(&MapSet.member?(@view_ip_classes, &1)))
   end
 
-  def can_view_ip?(_), do: false
-
-  def can_ban_ip?(%{id: id, class: class}) when is_integer(id) and id > 0 do
-    class |> normalize_class() |> then(&MapSet.member?(@ban_ip_classes, &1))
+  def can_ban_ip?(actor) do
+    actor_id(actor) > 0 and
+      (actor
+       |> actor_class()
+       |> then(&MapSet.member?(@ban_ip_classes, &1)))
   end
-
-  def can_ban_ip?(_), do: false
 
   def anonymous_user?(actor), do: anonymous_actor?(actor)
 
   def bypass_comment_checks?(actor) do
-    not anonymous_actor?(actor)
+    TagEdit.can_edit_tags?(actor)
   end
 
   def form_hash(remote_ip) when is_binary(remote_ip) do
@@ -62,7 +65,6 @@ defmodule ShimmiePhoenix.Site.Comments do
          :ok <- verify_anonymous_comment_checks(actor, image_id, comment, remote_ip, backend),
          {:ok, _comment_id} <-
            insert_comment(image_id, actor_user_id(actor), remote_ip, comment, backend) do
-      TelegramAlerts.notify_comment_added(image_id, actor, comment)
       {:ok, image_id}
     else
       {:error, _} = error -> error
@@ -88,14 +90,14 @@ defmodule ShimmiePhoenix.Site.Comments do
   end
 
   defp verify_anonymous_comment_checks(actor, image_id, comment, remote_ip, backend) do
-    if anonymous_actor?(actor) do
+    if bypass_comment_checks?(actor) do
+      :ok
+    else
       with :ok <- ensure_not_repetitive(comment),
            :ok <- ensure_not_rate_limited(remote_ip, backend),
            :ok <- ensure_not_duplicate(image_id, comment, backend) do
         :ok
       end
-    else
-      :ok
     end
   end
 
@@ -116,12 +118,12 @@ defmodule ShimmiePhoenix.Site.Comments do
   end
 
   defp verify_anonymous_form_hash(actor, supplied_hash, remote_ip) do
-    if anonymous_actor?(actor) do
+    if bypass_comment_checks?(actor) do
+      :ok
+    else
       expected = form_hash(remote_ip)
       supplied = supplied_hash |> to_string() |> String.trim() |> String.downcase()
       if supplied != "" and supplied == expected, do: :ok, else: {:error, :form_out_of_date}
-    else
-      :ok
     end
   end
 
@@ -348,7 +350,11 @@ defmodule ShimmiePhoenix.Site.Comments do
     end
   end
 
-  defp actor_user_id(%{id: id}) when is_integer(id) and id > 0, do: id
+  defp actor_user_id(%{id: id}) do
+    parsed = parse_int(id)
+    if parsed > 0, do: parsed, else: Users.anonymous_id()
+  end
+
   defp actor_user_id(_), do: Users.anonymous_id()
 
   defp anonymous_actor?(actor) do
@@ -358,8 +364,9 @@ defmodule ShimmiePhoenix.Site.Comments do
       nil ->
         true
 
-      %{id: id, class: class} when is_integer(id) and id > 0 ->
-        id == anon_id or String.downcase(to_string(class || "")) == "anonymous"
+      %{id: id, class: class} ->
+        parsed = parse_int(id)
+        parsed <= 0 or parsed == anon_id or actor_class(%{class: class}) == "anonymous"
 
       _ ->
         true
@@ -462,4 +469,10 @@ defmodule ShimmiePhoenix.Site.Comments do
     |> String.trim()
     |> String.downcase()
   end
+
+  defp actor_id(%{id: id}), do: parse_int(id)
+  defp actor_id(_), do: 0
+
+  defp actor_class(%{class: class}), do: normalize_class(class)
+  defp actor_class(_), do: ""
 end

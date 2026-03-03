@@ -13,11 +13,10 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
   alias ShimmiePhoenix.Site.UserProfile
   alias ShimmiePhoenix.Site.Help
   alias ShimmiePhoenix.Site.Store
+  alias ShimmiePhoenix.Site.TagEdit
   alias ShimmiePhoenix.Site.Upload
   alias ShimmiePhoenix.Site.Users
   alias ShimmiePhoenix.Repo
-
-  @tag_manage_classes MapSet.new(["admin", "taggers", "tag-dono", "tag_dono", "moderator"])
 
   def comment_list(conn, params) do
     page = parse_page(params["page_num"])
@@ -28,10 +27,10 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
     current_user = conn.assigns[:legacy_user] || Users.current_user(conn)
     remote_ip = Users.remote_ip_string(conn)
     can_create_comments = Comments.can_create_comment?(current_user)
-    anonymous_user? = Comments.anonymous_user?(current_user)
     comment_captcha? = String.upcase(to_string(Store.get_config("comment_captcha", "N"))) == "Y"
 
-    show_inline_postbox? = can_create_comments and (not anonymous_user? or not comment_captcha?)
+    show_inline_postbox? =
+      can_create_comments and (Comments.bypass_comment_checks?(current_user) or not comment_captcha?)
 
     conn
     |> assign(:page_title, "#{Pages.site_title()} - Comments")
@@ -398,12 +397,7 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
           acc ->
             value = Map.get(params, "_config_#{name}")
             normalized = cast_setup_value(type, value)
-
-            if normalized == :skip do
-              acc
-            else
-              [{name, Store.put_config(name, normalized)} | acc]
-            end
+            [{name, Store.put_config(name, normalized)} | acc]
         end
 
       if Enum.all?(results, fn {_name, result} -> result == :ok end) do
@@ -1771,14 +1765,7 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
     if cleaned == "", do: "FF0000", else: cleaned
   end
 
-  defp can_manage_tag_lists?(%{id: id, class: class}) when is_integer(id) and id > 0 do
-    class
-    |> to_string()
-    |> String.downcase()
-    |> then(&MapSet.member?(@tag_manage_classes, &1))
-  end
-
-  defp can_manage_tag_lists?(_), do: false
+  defp can_manage_tag_lists?(user), do: TagEdit.can_edit_tags?(user)
 
   defp admin?(%{class: class}) do
     class
@@ -2780,60 +2767,6 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
              "<br>(Enabled: every image and tag in sitemap, generation takes longer)<br>(Disabled: only display the last 50 uploads in the sitemap)"
          }
        ]},
-      {"Telegram Alerts",
-       [
-         %{
-           name: "telegram_alerts_enabled",
-           label: "Enable telegram notifications",
-           type: "bool",
-           input: :bool
-         },
-         %{
-           name: "telegram_alerts_bot_token",
-           label: "Bot token: ",
-           type: "secret",
-           input: :password,
-           leading_break?: true
-         },
-         %{
-           name: "telegram_alerts_chat_id",
-           label: "Chat ID or @channel: ",
-           type: "string",
-           leading_break?: true
-         },
-         %{
-           name: "telegram_alerts_base_url",
-           label: "Public board URL (eg. https://example.com): ",
-           type: "string",
-           leading_break?: true
-         },
-         %{
-           name: "telegram_alerts_on_upload",
-           label: "Alert on new uploads",
-           type: "bool",
-           input: :bool,
-           leading_break?: true
-         },
-         %{
-           name: "telegram_alerts_on_approve",
-           label: "Alert when posts are approved",
-           type: "bool",
-           input: :bool,
-           leading_break?: true
-         },
-         %{
-           name: "telegram_alerts_on_comment",
-           label: "Alert on new comments",
-           type: "bool",
-           input: :bool,
-           leading_break?: true
-         },
-         %{
-           kind: :label,
-           html:
-             "<br>Optional env overrides: SHIMMIE_TELEGRAM_BOT_TOKEN, SHIMMIE_TELEGRAM_CHAT_ID, SHIMMIE_TELEGRAM_BASE_URL"
-         }
-       ]},
       {"Remote API Integration",
        [
          %{kind: :label, html: "<a href='https://akismet.com/'>Akismet</a>"},
@@ -2983,7 +2916,6 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
 
   defp infer_input_type(name, value) do
     cond do
-      secretish_name?(name) -> :password
       String.contains?(value, "\n") or String.length(value) > 160 -> :textarea
       infer_store_type(name, value) == "bool" -> :bool
       infer_store_type(name, value) == "int" -> :number
@@ -3016,13 +2948,6 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
       String.starts_with?(name, "can_")
   end
 
-  defp secretish_name?(name) do
-    lowered = String.downcase(to_string(name))
-
-    String.contains?(lowered, "token") or String.contains?(lowered, "secret") or
-      String.contains?(lowered, "password") or String.ends_with?(lowered, "_key")
-  end
-
   defp integer_like?(value) do
     case Integer.parse(to_string(value)) do
       {_, ""} -> true
@@ -3036,7 +2961,6 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
     case to_string(type) do
       "bool" -> if(truthy_form_value?(value), do: "Y", else: "N")
       "int" -> value |> parse_shorthand_int() |> Integer.to_string()
-      "secret" -> if(String.trim(value) == "", do: :skip, else: String.trim(value))
       _ -> value
     end
   end

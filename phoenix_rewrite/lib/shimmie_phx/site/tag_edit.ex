@@ -15,15 +15,12 @@ defmodule ShimmiePhoenix.Site.TagEdit do
   @sqlite_separator <<31>>
   @sqlite_row_separator <<30>>
 
-  def can_edit_tags?(%{id: id, class: class}) when is_integer(id) and id > 0 do
-    class
-    |> to_string()
-    |> String.trim()
-    |> String.downcase()
-    |> then(&MapSet.member?(@tag_edit_classes, &1))
+  def can_edit_tags?(actor) do
+    actor_id(actor) > 0 and
+      (actor
+       |> actor_class()
+       |> then(&MapSet.member?(@tag_edit_classes, &1)))
   end
-
-  def can_edit_tags?(_), do: false
 
   def update_tags(image_id, tags_string, actor, remote_ip) do
     with {:ok, image_id} <- parse_image_id(image_id),
@@ -45,6 +42,15 @@ defmodule ShimmiePhoenix.Site.TagEdit do
       path -> update_sqlite(path, image_id, tags, actor, remote_ip)
     end
   end
+
+  defp actor_class(%{class: class}) do
+    class
+    |> to_string()
+    |> String.trim()
+    |> String.downcase()
+  end
+
+  defp actor_class(_), do: ""
 
   defp update_repo(image_id, tags, actor, remote_ip) do
     Repo.transaction(fn ->
@@ -276,7 +282,16 @@ defmodule ShimmiePhoenix.Site.TagEdit do
     {:ok, TagRules.normalize_and_expand(value)}
   end
 
-  defp actor_id(%{id: id}) when is_integer(id) and id > 0, do: id
+  defp actor_id(%{id: id}) do
+    parsed = parse_int(id)
+
+    if parsed > 0 do
+      parsed
+    else
+      Store.get_config("anon_id", "1") |> to_string() |> parse_int()
+    end
+  end
+
   defp actor_id(_), do: Store.get_config("anon_id", "1") |> to_string() |> parse_int()
 
   defp normalize_ip(value) do

@@ -33,9 +33,11 @@ defmodule ShimmiePhoenixWeb.PostController do
             current_user = conn.assigns[:legacy_user] || Users.current_user(conn)
             remote_ip = Users.remote_ip_string(conn)
             recaptcha_key = to_string(Store.get_config("api_recaptcha_pubkey", "") || "")
+            comment_captcha_enabled? =
+              String.upcase(to_string(Store.get_config("comment_captcha", "N"))) == "Y"
 
             show_captcha =
-              String.upcase(to_string(Store.get_config("comment_captcha", "N"))) == "Y"
+              comment_captcha_enabled? and not Comments.bypass_comment_checks?(current_user)
 
             show_approval_controls =
               Approval.can_approve?(current_user) and Approval.approval_supported?()
@@ -463,4 +465,5 @@ defmodule ShimmiePhoenixWeb.PostController do
       _ -> {:error, :invalid_image_id}
     end
   end
+
 end
