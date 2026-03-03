@@ -8,6 +8,10 @@
 
 ```
 
+# Moved to a non-fork repo after rewrite completion
+
+https://github.com/eltanschauung/Shimmie-Elixir
+
 # Shimmie re-written in Elixir + Phoenix
 
 This is Shimmie2 by Shish & co. rewritten in the Elixir language for a personal project. This is made to be used with the Phoenix Framework and requires PostGreSql (replacing Sqlite in Shimmie2). I've made some personal changes from the original for loading and modularity that I find more favorable; see [Gyate Booru](https://gyate.net) for a demo.
