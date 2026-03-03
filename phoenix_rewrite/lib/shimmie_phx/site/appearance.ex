@@ -15,10 +15,23 @@ defmodule ShimmiePhoenix.Site.Appearance do
 
   def css_paths do
     theme = theme_name()
-    primary = cache_path("style", ".css", theme)
-    theme_css = theme_asset_path(theme, "style.css")
+    {primary, theme_css} = theme_styles(theme)
 
-    fallback =
+    base_theme =
+      if inherits_danbooru2?(theme) do
+        "danbooru2"
+      else
+        nil
+      end
+
+    {base_primary, base_theme_css} =
+      if base_theme do
+        theme_styles(base_theme)
+      else
+        {nil, nil}
+      end
+
+    fallback_primary =
       if is_nil(primary) and is_nil(theme_css) do
         cache_path("style", ".css", "danbooru2")
       else
@@ -26,13 +39,13 @@ defmodule ShimmiePhoenix.Site.Appearance do
       end
 
     fallback_theme_css =
-      if is_nil(primary) and is_nil(theme_css) and is_nil(fallback) do
+      if is_nil(primary) and is_nil(theme_css) and is_nil(fallback_primary) do
         theme_asset_path("danbooru2", "style.css")
       else
         nil
       end
 
-    [primary, theme_css, fallback, fallback_theme_css]
+    [base_primary, base_theme_css, primary, theme_css, fallback_primary, fallback_theme_css]
     |> Enum.reject(&is_nil/1)
     |> Enum.uniq()
   end
@@ -174,6 +187,14 @@ defmodule ShimmiePhoenix.Site.Appearance do
   defp theme_asset_path(theme, filename) do
     full = Path.join([Site.legacy_root(), "themes", theme, filename])
     if File.regular?(full), do: "/themes/#{theme}/#{filename}", else: nil
+  end
+
+  defp theme_styles(theme) do
+    {cache_path("style", ".css", theme), theme_asset_path(theme, "style.css")}
+  end
+
+  defp inherits_danbooru2?(theme) do
+    theme in ["lite", "rule34v2", "material", "images", "db2_halloween", "db2_thanksgiving", "db2_christmas"]
   end
 
   defp theme_asset_exists?(theme, filename) do
