@@ -120,6 +120,8 @@ defmodule ShimmiePhoenixWeb.Router do
     pipe_through :compat_mutation
 
     post "/comment/add", CommentController, :add
+    post "/post/set", PostController, :set_info
+    post "/tag_edit", PostController, :edit_tags
     post "/favourite/add/:image_id", FavoritesController, :add
     post "/favourite/remove/:image_id", FavoritesController, :remove
     post "/approve_image/:image_id", PostController, :approve

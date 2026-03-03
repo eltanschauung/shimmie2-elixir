@@ -2763,6 +2763,59 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
              "<br>(Enabled: every image and tag in sitemap, generation takes longer)<br>(Disabled: only display the last 50 uploads in the sitemap)"
          }
        ]},
+      {"Telegram Alerts",
+       [
+         %{
+           name: "telegram_alerts_enabled",
+           label: "Enable telegram notifications",
+           type: "bool",
+           input: :bool
+         },
+         %{
+           name: "telegram_alerts_bot_token",
+           label: "Bot token: ",
+           type: "string",
+           leading_break?: true
+         },
+         %{
+           name: "telegram_alerts_chat_id",
+           label: "Chat ID or @channel: ",
+           type: "string",
+           leading_break?: true
+         },
+         %{
+           name: "telegram_alerts_base_url",
+           label: "Public board URL (eg. https://gyate.net): ",
+           type: "string",
+           leading_break?: true
+         },
+         %{
+           name: "telegram_alerts_on_upload",
+           label: "Alert on new uploads",
+           type: "bool",
+           input: :bool,
+           leading_break?: true
+         },
+         %{
+           name: "telegram_alerts_on_approve",
+           label: "Alert when posts are approved",
+           type: "bool",
+           input: :bool,
+           leading_break?: true
+         },
+         %{
+           name: "telegram_alerts_on_comment",
+           label: "Alert on new comments",
+           type: "bool",
+           input: :bool,
+           leading_break?: true
+         },
+         %{
+           kind: :label,
+           html:
+             "<br>Optional env overrides: SHIMMIE_TELEGRAM_BOT_TOKEN, SHIMMIE_TELEGRAM_CHAT_ID, SHIMMIE_TELEGRAM_BASE_URL"
+         }
+       ]},
       {"Remote API Integration",
        [
          %{kind: :label, html: "<a href='https://akismet.com/'>Akismet</a>"},

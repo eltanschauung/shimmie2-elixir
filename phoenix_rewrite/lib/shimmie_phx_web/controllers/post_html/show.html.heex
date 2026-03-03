@@ -308,45 +308,109 @@
           <tr>
             <th width="50px">Tags</th>
             <td>
-              <%= if @post.tags == [] do %>
-                (no tags)
-              <% else %>
-                <%= for tag <- @post.tags do %>
-                  <a href={"/post/list/#{URI.encode(tag)}/1"}><%= tag %></a>
+              <div class="view">
+                <%= if @post.tags == [] do %>
+                  (no tags)
+                <% else %>
+                  <%= for tag <- @post.tags do %>
+                    <a href={"/post/list/#{URI.encode(tag)}/1"}><%= tag %></a>
+                  <% end %>
                 <% end %>
+              </div>
+              <%= if @can_edit_tags do %>
+                <div class="edit">
+                  <input
+                    class="autocomplete_tags"
+                    type="text"
+                    name="tags"
+                    id="tag_editor"
+                    value={@tag_edit_value}
+                    autocomplete="off"
+                    spellcheck="off"
+                  />
+                </div>
               <% end %>
             </td>
           </tr>
           <tr>
             <th>Source</th>
             <td>
-              <div style="overflow: hidden; white-space: nowrap; max-width: 350px; text-overflow: ellipsis;">
+              <div class="view" style="overflow: hidden; white-space: nowrap; max-width: 350px; text-overflow: ellipsis;">
                 <%= if is_binary(@source_href) and @source_href != "" do %>
                   <a href={@source_href}><%= @source_href %></a>
                 <% else %>
                   <%= @source_text %>
                 <% end %>
               </div>
+              <%= if @can_edit_post_info do %>
+                <div class="edit">
+                  <input type="text" name="source" value={@source_href || ""} />
+                </div>
+              <% end %>
             </td>
           </tr>
           <tr>
             <th>Locked</th>
-            <td><%= @locked_label %></td>
+            <td>
+              <div class="view"><%= @locked_label %></div>
+              <%= if @can_edit_post_info do %>
+                <div class="edit">
+                  <input
+                    type="checkbox"
+                    name="locked"
+                    value="on"
+                    checked={Map.get(@post, :locked, false)}
+                  />
+                </div>
+              <% end %>
+            </td>
           </tr>
           <tr>
             <th>Parent</th>
             <td>
-              <%= if @parent_id do %>
-                <a href={"/post/view/#{@parent_id}"}><%= @parent_id %></a>
-              <% else %>
-                None
+              <div class="view">
+                <%= if @parent_id do %>
+                  <a href={"/post/view/#{@parent_id}"}><%= @parent_id %></a>
+                <% else %>
+                  None
+                <% end %>
+              </div>
+              <%= if @can_edit_post_info do %>
+                <div class="edit">
+                  <input type="number" name="parent" value={@parent_id || ""} />
+                </div>
               <% end %>
             </td>
           </tr>
           <tr>
             <th>Rating</th>
-            <td><%= @rating_label %></td>
+            <td>
+              <div class="view"><%= @rating_label %></div>
+              <%= if @can_edit_post_info do %>
+                <div class="edit">
+                  <select name="rating">
+                    <option value="?" selected={to_string(Map.get(@post, :rating, "?")) == "?"}>Unrated</option>
+                    <option value="s" selected={to_string(Map.get(@post, :rating, "?")) == "s"}>Safe</option>
+                    <option value="q" selected={to_string(Map.get(@post, :rating, "?")) == "q"}>Questionable</option>
+                    <option value="e" selected={to_string(Map.get(@post, :rating, "?")) == "e"}>Explicit</option>
+                  </select>
+                </div>
+              <% end %>
+            </td>
           </tr>
+          <%= if @can_edit_tags or @can_edit_post_info do %>
+            <tr>
+              <td colspan="2">
+                <input
+                  class="view shm-post-edit-toggle"
+                  type="button"
+                  value="Edit"
+                  onclick="clearViewMode()"
+                />
+                <input class="edit" type="submit" value="Set" />
+              </td>
+            </tr>
+          <% end %>
         </table>
       </form>
     </div>

@@ -5,6 +5,7 @@ defmodule ShimmiePhoenix.Site.Index do
 
   alias ShimmiePhoenix.Site
   alias ShimmiePhoenix.Site.Store
+  alias ShimmiePhoenix.Site.TagRules
   alias ShimmiePhoenix.Repo
 
   @sqlite_separator <<31>>
@@ -274,6 +275,7 @@ defmodule ShimmiePhoenix.Site.Index do
     search
     |> String.trim()
     |> String.split(~r/\s+/, trim: true)
+    |> Enum.map(&TagRules.resolve_search_term/1)
   end
 
   defp repo_conditions(terms, current_user) do

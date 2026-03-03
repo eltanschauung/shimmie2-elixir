@@ -7,7 +7,10 @@ defmodule ShimmiePhoenixWeb.PostController do
   alias ShimmiePhoenix.Site.Posts
   alias ShimmiePhoenix.Site.Index
   alias ShimmiePhoenix.Site.PostAdmin
+  alias ShimmiePhoenix.Site.PostSet
   alias ShimmiePhoenix.Site.Store
+  alias ShimmiePhoenix.Site.TagEdit
+  alias ShimmiePhoenix.Site.TelegramAlerts
   alias ShimmiePhoenix.Site.Favorites
   alias ShimmiePhoenix.Site.Users
 
@@ -51,6 +54,9 @@ defmodule ShimmiePhoenixWeb.PostController do
             can_view_comment_ips = Comments.can_view_ip?(current_user)
             can_ban_comment_ips = Comments.can_ban_ip?(current_user)
             uploader_ip = post |> Map.get(:owner_ip) |> to_string() |> String.trim()
+            can_edit_tags = TagEdit.can_edit_tags?(current_user)
+            can_edit_post_info = PostSet.can_edit_post_info?(current_user)
+            tag_edit_value = Enum.join(post.tags || [], " ")
 
             favorited_by_current_user =
               if logged_in? do
@@ -66,6 +72,7 @@ defmodule ShimmiePhoenixWeb.PostController do
             |> assign(:page_title, "#{Appearance.site_title()} - ")
             |> assign(:has_left_nav, true)
             |> assign(:include_notes_assets, true)
+            |> assign(:include_view_assets, true)
             |> assign(:meta_keywords, Enum.join(post.tags || [], ", "))
             |> assign(:meta_og_title, Enum.join(post.tags || [], ", "))
             |> assign(:meta_og_type, "article")
@@ -95,6 +102,9 @@ defmodule ShimmiePhoenixWeb.PostController do
               can_view_uploader_ip: can_view_comment_ips,
               can_ban_uploader_ip: can_ban_comment_ips,
               uploader_ip: uploader_ip,
+              can_edit_tags: can_edit_tags,
+              can_edit_post_info: can_edit_post_info,
+              tag_edit_value: tag_edit_value,
               favorited_by_current_user: favorited_by_current_user,
               comment_form_hash: Comments.form_hash(remote_ip),
               notes_json: notes_json
@@ -108,6 +118,51 @@ defmodule ShimmiePhoenixWeb.PostController do
 
   def approve(conn, params), do: set_approval(conn, params, true)
   def disapprove(conn, params), do: set_approval(conn, params, false)
+
+  def edit_tags(conn, params) do
+    current_user = conn.assigns[:legacy_user] || Users.current_user(conn)
+    remote_ip = Users.remote_ip_string(conn)
+
+    case TagEdit.update_tags(params["image_id"], params["tags"], current_user, remote_ip) do
+      :ok ->
+        redirect(conn, to: "/post/view/#{params["image_id"]}")
+
+      {:error, :permission_denied} ->
+        send_resp(conn, 403, "Permission Denied")
+
+      {:error, :invalid_image_id} ->
+        send_resp(conn, 400, "Bad Request")
+
+      {:error, :post_not_found} ->
+        send_resp(conn, 404, "Not Found")
+
+      _ ->
+        send_resp(conn, 500, "Tag Update Failed")
+    end
+  end
+
+  def set_info(conn, params) do
+    current_user = conn.assigns[:legacy_user] || Users.current_user(conn)
+    remote_ip = Users.remote_ip_string(conn)
+    image_id = params["image_id"]
+
+    case PostSet.apply(image_id, params, current_user, remote_ip) do
+      :ok ->
+        redirect(conn, to: "/post/view/#{image_id}")
+
+      {:error, :permission_denied} ->
+        send_resp(conn, 403, "Permission Denied")
+
+      {:error, :invalid_image_id} ->
+        send_resp(conn, 400, "Bad Request")
+
+      {:error, :post_not_found} ->
+        send_resp(conn, 404, "Not Found")
+
+      _ ->
+        send_resp(conn, 500, "Post Update Failed")
+    end
+  end
 
   def list(conn, params) do
     case search_redirect_path(params) do
@@ -363,6 +418,10 @@ defmodule ShimmiePhoenixWeb.PostController do
 
     with {:ok, image_id} <- parse_approval_image_id(params),
          :ok <- set_image_approval(image_id, current_user, approved?) do
+      if approved? do
+        TelegramAlerts.notify_post_approved(image_id, current_user)
+      end
+
       redirect(conn, to: "/post/view/#{image_id}")
     else
       {:error, :permission_denied} ->

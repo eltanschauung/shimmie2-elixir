@@ -39,8 +39,6 @@
       <script defer src={script_path} type="text/javascript">
       </script>
     <% end %>
-    <script defer src="/ext/autocomplete/lib/jquery.min.js" type="text/javascript">
-    </script>
     <script defer src="/ext/autocomplete/lib/jquery-ui.min.js" type="text/javascript">
     </script>
     <script defer src="/ext/autocomplete/lib/tag-it.min.js" type="text/javascript">
@@ -50,9 +48,9 @@
       type="text/css"
       href="//ajax.googleapis.com/ajax/libs/jqueryui/1/themes/flick/jquery-ui.css"
     />
-    <link rel="stylesheet" type="text/css" href="/ext/autocomplete/lib/jquery.tagit.css" />
-    <link rel="stylesheet" type="text/css" href="/ext/autocomplete/style.css" />
-    <script defer src="/ext/autocomplete/script.js" type="text/javascript">
+    <link rel="stylesheet" type="text/css" href="/ext/autocomplete/lib/jquery.tagit.css?v=20260303e" />
+    <link rel="stylesheet" type="text/css" href="/ext/autocomplete/style.css?v=20260303e" />
+    <script defer src="/ext/autocomplete/script.js?v=20260303e" type="text/javascript">
     </script>
     <link
       rel="search"
@@ -126,6 +124,12 @@
       #Navigationleft form > input[name="search"].tagit-hidden-field {
         display: none !important;
       }
+
+      #post-info-main .image_info textarea,
+      #post-info-main .image_info .tagit,
+      #post-info-main .image_info .tagit input {
+        font-family: Tahoma, Verdana, Helvetica, sans-serif;
+      }
     </style>
     <%= if is_list(assigns[:preload_images]) do %>
       <%= for image_href <- assigns[:preload_images] do %>
@@ -159,6 +163,11 @@
       </script>
       <link rel="stylesheet" type="text/css" href="/ext/notes/lib/jquery.imgnotes-1.0.min.css" />
       <script defer src="/ext/notes/script.js" type="text/javascript">
+      </script>
+    <% end %>
+    <%= if assigns[:include_view_assets] do %>
+      <link rel="stylesheet" type="text/css" href="/ext/view/style.css?v=20260303f" />
+      <script defer src="/ext/view/script.js?v=20260303f" type="text/javascript">
       </script>
     <% end %>
     <%= Phoenix.HTML.raw(ShimmiePhoenix.Site.Appearance.custom_html_headers()) %>
@@ -256,6 +265,12 @@
             Contact
           <% end %>
           | <a href="https://github.com/eltanschauung/shimmie2-elixir">Shimmie2-Elixir</a>
+          <br />
+          Media &copy; their respective owners,
+          <a href="https://code.shishnet.org/shimmie2/">Shimmie</a>
+          &copy; <a href="https://www.shishnet.org/">Shish</a>
+          &amp; <a href="https://github.com/shish/shimmie2/graphs/contributors">The Team</a>
+          2007-2020
         </div>
       </footer>
     <% end %>

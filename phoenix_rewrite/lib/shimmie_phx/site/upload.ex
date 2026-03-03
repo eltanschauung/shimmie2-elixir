@@ -7,6 +7,7 @@ defmodule ShimmiePhoenix.Site.Upload do
   alias ShimmiePhoenix.Site
   alias ShimmiePhoenix.Site.Approval
   alias ShimmiePhoenix.Site.Store
+  alias ShimmiePhoenix.Site.TagRules
 
   @image_exts ~w(jpg jpeg png gif webp avif)
   @allowed_upload_exts MapSet.new(~w(
@@ -411,13 +412,7 @@ defmodule ShimmiePhoenix.Site.Upload do
   end
 
   defp normalized_tags(common_tags, specific_tags) do
-    [common_tags, specific_tags]
-    |> Enum.map(&to_string(&1 || ""))
-    |> Enum.join(" ")
-    |> String.downcase()
-    |> String.split(~r/[,\s]+/, trim: true)
-    |> Enum.reject(&(&1 == ""))
-    |> Enum.uniq()
+    TagRules.normalize_and_expand(common_tags, specific_tags)
   end
 
   defp first_non_blank(values) do

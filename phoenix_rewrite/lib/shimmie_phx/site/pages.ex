@@ -6,6 +6,7 @@ defmodule ShimmiePhoenix.Site.Pages do
   alias ShimmiePhoenix.Site
   alias ShimmiePhoenix.Site.Posts
   alias ShimmiePhoenix.Site.Store
+  alias ShimmiePhoenix.Site.TagRules
   alias ShimmiePhoenix.Repo
 
   @sqlite_separator <<31>>
@@ -475,35 +476,7 @@ defmodule ShimmiePhoenix.Site.Pages do
   def remove_auto_tag(_), do: {:error, :invalid_tag}
 
   def autocomplete(search, limit \\ 100) when is_binary(search) do
-    trimmed = String.trim(search)
-
-    if trimmed == "" do
-      %{}
-    else
-      sql_like = escape_like(String.downcase(trimmed)) <> "%"
-
-      rows =
-        case sqlite_db_path() do
-          nil ->
-            query_rows(
-              "SELECT tag, count FROM tags WHERE LOWER(tag) LIKE $1 AND count > 0 " <>
-                "ORDER BY count DESC, tag ASC LIMIT $2",
-              [sql_like, limit]
-            )
-
-          path ->
-            sql =
-              "SELECT tag, count FROM tags " <>
-                "WHERE LOWER(tag) LIKE '#{escape_sqlite_string(sql_like)}' ESCAPE '\\' AND count > 0 " <>
-                "ORDER BY count DESC, tag ASC LIMIT #{limit}"
-
-            sqlite_rows(path, sql)
-        end
-
-      Enum.reduce(rows, %{}, fn [tag, count], acc ->
-        Map.put(acc, tag, parse_int(count))
-      end)
-    end
+    TagRules.autocomplete(search, limit)
   end
 
   def browser_search_suggestions(search, limit \\ 30) do

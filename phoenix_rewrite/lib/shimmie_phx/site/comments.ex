@@ -5,6 +5,7 @@ defmodule ShimmiePhoenix.Site.Comments do
 
   alias ShimmiePhoenix.Site
   alias ShimmiePhoenix.Site.Store
+  alias ShimmiePhoenix.Site.TelegramAlerts
   alias ShimmiePhoenix.Site.Users
   alias ShimmiePhoenix.Repo
 
@@ -61,6 +62,7 @@ defmodule ShimmiePhoenix.Site.Comments do
          :ok <- verify_anonymous_comment_checks(actor, image_id, comment, remote_ip, backend),
          {:ok, _comment_id} <-
            insert_comment(image_id, actor_user_id(actor), remote_ip, comment, backend) do
+      TelegramAlerts.notify_comment_added(image_id, actor, comment)
       {:ok, image_id}
     else
       {:error, _} = error -> error

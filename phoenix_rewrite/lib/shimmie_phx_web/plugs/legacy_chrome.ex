@@ -219,6 +219,8 @@ defmodule ShimmiePhoenixWeb.Plugs.LegacyChrome do
         {"/system_info", "System Info"},
         {"/ext_manager", "Extension Manager"},
         {"/user_admin/list", "User List"},
+        {"/auto_tag/list", "Auto-Tag"},
+        {"/alias/list", "Aliases"},
         {"/admin", "Board Admin"},
         if_enabled(enabled, "ipban", {"/ip_ban/list", "IP Bans"}),
         if_enabled(enabled, "source_history", {"/source_history/all/1", "Source Changes"}),
