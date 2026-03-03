@@ -24,7 +24,7 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
     total_pages = max(1, div(total_count + per_page - 1, per_page))
     current_page = min(page, total_pages)
     current_user = conn.assigns[:legacy_user] || Users.current_user(conn)
-    remote_ip = Users.remote_ip_string(conn.remote_ip)
+    remote_ip = Users.remote_ip_string(conn)
     can_create_comments = Comments.can_create_comment?(current_user)
     anonymous_user? = Comments.anonymous_user?(current_user)
     comment_captcha? = String.upcase(to_string(Store.get_config("comment_captcha", "N"))) == "Y"
@@ -65,7 +65,7 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
 
   def upload_post(conn, params) do
     actor = conn.assigns[:legacy_user] || Users.current_user(conn) || anonymous_actor()
-    remote_ip = Users.remote_ip_string(conn.remote_ip)
+    remote_ip = Users.remote_ip_string(conn)
     common_tags = params["tags"]
     common_source = params["source"]
     entries = upload_entries(params)
@@ -788,7 +788,7 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
           display_user: display_user,
           notice: params["notice"],
           error: params["error"],
-          current_ip: Users.remote_ip_string(conn.remote_ip),
+          current_ip: Users.remote_ip_string(conn),
           can_edit?: can_edit?,
           show_admin_ops?: current_user && to_string(current_user.class) == "admin",
           class_options: class_options,
@@ -896,7 +896,7 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
              to_id,
              subject,
              message,
-             Users.remote_ip_string(conn.remote_ip)
+             Users.remote_ip_string(conn)
            ) do
         :ok ->
           redirect(
@@ -939,7 +939,7 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
   end
 
   def login_post(conn, %{"user" => user, "pass" => pass}) do
-    case Users.login(user, pass, Users.remote_ip_string(conn.remote_ip)) do
+    case Users.login(user, pass, Users.remote_ip_string(conn)) do
       {:ok, logged_user, session_token} ->
         conn
         |> configure_session(renew: true)
@@ -1000,7 +1000,7 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
 
   def create_post(conn, params) do
     if Users.signup_enabled?() do
-      case Users.create_user(params, Users.remote_ip_string(conn.remote_ip), %{login: true}) do
+      case Users.create_user(params, Users.remote_ip_string(conn), %{login: true}) do
         {:ok, user, session_token} ->
           conn
           |> configure_session(renew: true)
@@ -1026,7 +1026,7 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
     actor = Users.current_user(conn)
 
     if actor && actor.class == "admin" do
-      case Users.create_user(params, Users.remote_ip_string(conn.remote_ip), %{login: false}) do
+      case Users.create_user(params, Users.remote_ip_string(conn), %{login: false}) do
         {:ok, _user, _} ->
           redirect(conn, to: "/user_admin/list?notice=" <> URI.encode_www_form("Created new user"))
 
@@ -1106,7 +1106,7 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
     params = ensure_target_user_id(params, actor)
     self_change? = self_target?(actor, params)
 
-    case Users.change_pass(actor, params, Users.remote_ip_string(conn.remote_ip)) do
+    case Users.change_pass(actor, params, Users.remote_ip_string(conn)) do
       {:ok, user, token} ->
         conn
         |> maybe_set_post_change_auth(actor, user, token)
@@ -1307,7 +1307,7 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
              decoded_title,
              body,
              current_user.id,
-             Users.remote_ip_string(conn.remote_ip)
+             Users.remote_ip_string(conn)
            ) do
         :ok ->
           redirect(
@@ -1383,7 +1383,7 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
              decoded_title,
              revision,
              current_user.id,
-             Users.remote_ip_string(conn.remote_ip)
+             Users.remote_ip_string(conn)
            ) do
         :ok ->
           redirect(

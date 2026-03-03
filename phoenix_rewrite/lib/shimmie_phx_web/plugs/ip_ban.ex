@@ -9,7 +9,7 @@ defmodule ShimmiePhoenixWeb.Plugs.IPBan do
 
   def call(conn, _opts) do
     actor = conn.assigns[:legacy_user] || Users.current_user(conn)
-    remote_ip = Users.remote_ip_string(conn.remote_ip)
+    remote_ip = Users.remote_ip_string(conn)
 
     case IPBans.evaluate_request(remote_ip, actor) do
       {:blocked, message_html} ->

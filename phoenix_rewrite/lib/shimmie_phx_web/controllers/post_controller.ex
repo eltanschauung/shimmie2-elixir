@@ -28,7 +28,7 @@ defmodule ShimmiePhoenixWeb.PostController do
             tag_rows = Posts.tag_rows(id)
             comments = Posts.comments(id)
             current_user = conn.assigns[:legacy_user] || Users.current_user(conn)
-            remote_ip = Users.remote_ip_string(conn.remote_ip)
+            remote_ip = Users.remote_ip_string(conn)
             recaptcha_key = to_string(Store.get_config("api_recaptcha_pubkey", "") || "")
 
             show_captcha =

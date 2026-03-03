@@ -486,11 +486,81 @@ defmodule ShimmiePhoenix.Site.Users do
     :crypto.hash(:sha3_256, hash) |> Base.encode16(case: :lower)
   end
 
+  def remote_ip_string(%Plug.Conn{} = conn) do
+    proxy_tuple = normalize_ipv4_mapped_ipv6(conn.remote_ip)
+    proxy_ip = remote_ip_string(proxy_tuple)
+
+    if trusted_proxy?(proxy_tuple) do
+      conn
+      |> forwarded_for()
+      |> forwarded_for_ip()
+      |> case do
+        nil -> proxy_ip
+        ip -> ip
+      end
+    else
+      proxy_ip
+    end
+  end
+
   def remote_ip_string(remote_ip) when is_tuple(remote_ip) do
-    remote_ip |> :inet.ntoa() |> to_string()
+    remote_ip
+    |> normalize_ipv4_mapped_ipv6()
+    |> :inet.ntoa()
+    |> to_string()
   end
 
   def remote_ip_string(_), do: "0.0.0.0"
+
+  defp trusted_proxy?({127, _, _, _}), do: true
+  defp trusted_proxy?({10, _, _, _}), do: true
+  defp trusted_proxy?({192, 168, _, _}), do: true
+  defp trusted_proxy?({172, second, _, _}) when second in 16..31, do: true
+  defp trusted_proxy?({0, 0, 0, 0, 0, 0, 0, 1}), do: true
+  defp trusted_proxy?(_), do: false
+
+  defp forwarded_for(conn) do
+    conn
+    |> Plug.Conn.get_req_header("x-forwarded-for")
+    |> List.first()
+    |> case do
+      nil ->
+        conn |> Plug.Conn.get_req_header("x-real-ip") |> List.first()
+
+      header ->
+        header
+    end
+  end
+
+  defp forwarded_for_ip(nil), do: nil
+  defp forwarded_for_ip(""), do: nil
+
+  defp forwarded_for_ip(header) when is_binary(header) do
+    header
+    |> String.split(",")
+    |> Enum.map(&String.trim/1)
+    |> Enum.reject(&(&1 == ""))
+    # Apache appends REMOTE_ADDR to the end, so using the right-most valid
+    # entry avoids trusting client-supplied prepended values.
+    |> Enum.reverse()
+    |> Enum.find_value(fn ip ->
+      case :inet.parse_address(String.to_charlist(ip)) do
+        {:ok, tuple} -> remote_ip_string(tuple)
+        _ -> nil
+      end
+    end)
+  end
+
+  defp normalize_ipv4_mapped_ipv6({0, 0, 0, 0, 0, 65_535, high, low}) do
+    {
+      Bitwise.band(Bitwise.bsr(high, 8), 0xFF),
+      Bitwise.band(high, 0xFF),
+      Bitwise.band(Bitwise.bsr(low, 8), 0xFF),
+      Bitwise.band(low, 0xFF)
+    }
+  end
+
+  defp normalize_ipv4_mapped_ipv6(tuple), do: tuple
 
   defp users_count(where_sql, args) do
     case Repo.query("SELECT COUNT(*) FROM users#{where_sql}", args) do

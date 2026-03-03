@@ -6,7 +6,7 @@ defmodule ShimmiePhoenixWeb.CommentController do
 
   def add(conn, params) do
     actor = conn.assigns[:legacy_user] || Users.current_user(conn)
-    remote_ip = Users.remote_ip_string(conn.remote_ip)
+    remote_ip = Users.remote_ip_string(conn)
 
     case Comments.add(params, actor, remote_ip) do
       {:ok, image_id} ->
