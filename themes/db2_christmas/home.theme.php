@@ -60,7 +60,7 @@ EOD
 			<div class='space' id='foot'>
 				<small><small>
 				$contact_link Serving $num_comma posts &ndash;
-				Running <a href='https://code.shishnet.org/shimmie2/'>Shimmie2</a>
+				Running <a href='https://github.com/eltanschauung/Gyate-Booru-Elixir'>Shimmie2-Elixir</a>
 				</small></small>
 			</div>
 		</div>";
