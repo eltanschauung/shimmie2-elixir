@@ -8,14 +8,20 @@
 
 ```
 
-# Shimmie
+# Shimmie... re-written in Elixir, with Phoenix!
+
+Old Shimmie2 links:
 
 [![Tests](https://github.com/shish/shimmie2/actions/workflows/tests.yml/badge.svg)](https://github.com/shish/shimmie2/actions/workflows/tests.yml)
 [![Matrix](https://matrix.to/img/matrix-badge.svg)](https://matrix.to/#/#shimmie:matrix.org)
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/shish/shimmie2?quickstart=1)
 
-# Documentation
+#Explanation
+
+This is Shimmie2 by Shish & co. rewritten in the Elixir language for a personal project. This is made to be used with the Phoenix Framework and requires PostGreSql (replacing Sqlite in Shimmie2).
+
+# Original Documentation & Links
 
 * [Install straight on disk](https://github.com/shish/shimmie2/wiki/Install)
 * [Install in docker container](https://github.com/shish/shimmie2/wiki/Docker)
