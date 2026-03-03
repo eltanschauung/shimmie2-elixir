@@ -102,26 +102,80 @@ defmodule ShimmiePhoenix.Site.TelegramAlerts do
       String.to_charlist(encoded)
     }
 
-    case :httpc.request(:post, request, [timeout: 5_000, connect_timeout: 5_000], []) do
-      {:ok, {{_, status, _}, _headers, _body}} when status in 200..299 ->
-        :ok
+    http_options = [timeout: 5_000, connect_timeout: 5_000, ssl: ssl_options()]
+
+    case :httpc.request(:post, request, http_options, body_format: :binary) do
+      {:ok, {{_, status, _}, _headers, body}} when status in 200..299 ->
+        validate_telegram_response(body)
 
       {:ok, {{_, status, _}, _headers, _body}} ->
         Logger.warning("telegram_alerts.send failed status=#{status}")
         :error
 
-      {:error, reason} ->
-        Logger.warning("telegram_alerts.send failed reason=#{inspect(reason)}")
+      {:error, _reason} ->
+        Logger.warning("telegram_alerts.send failed")
         :error
     end
   rescue
-    exception ->
-      Logger.warning("telegram_alerts.send raised #{Exception.message(exception)}")
+    _exception ->
+      Logger.warning("telegram_alerts.send raised")
       :error
   catch
-    kind, reason ->
-      Logger.warning("telegram_alerts.send #{kind}=#{inspect(reason)}")
+    _kind, _reason ->
+      Logger.warning("telegram_alerts.send threw")
       :error
+  end
+
+  defp ssl_options do
+    hostname_check =
+      if function_exported?(:public_key, :pkix_verify_hostname_match_fun, 1) do
+        [match_fun: :public_key.pkix_verify_hostname_match_fun(:https)]
+      else
+        []
+      end
+
+    base = [
+      verify: :verify_peer,
+      cacerts: ca_certs(),
+      server_name_indication: 'api.telegram.org',
+      depth: 3
+    ]
+
+    if hostname_check == [] do
+      base
+    else
+      Keyword.put(base, :customize_hostname_check, hostname_check)
+    end
+  end
+
+  defp ca_certs do
+    if function_exported?(:public_key, :cacerts_get, 0) do
+      :public_key.cacerts_get()
+    else
+      []
+    end
+  end
+
+  defp validate_telegram_response(body) do
+    case Jason.decode(to_string(body || "")) do
+      {:ok, %{"ok" => true}} ->
+        :ok
+
+      {:ok, %{"description" => description}} ->
+        Logger.warning(
+          "telegram_alerts.send rejected description=#{String.slice(to_string(description), 0, 120)}"
+        )
+
+        :error
+
+      {:ok, _payload} ->
+        Logger.warning("telegram_alerts.send rejected")
+        :error
+
+      {:error, _reason} ->
+        Logger.warning("telegram_alerts.send invalid response")
+        :error
+    end
   end
 
   defp credentials do

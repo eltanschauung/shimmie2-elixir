@@ -91,6 +91,17 @@
                                       step="1"
                                       style="text-align: center;"
                                     />
+                                  <% field.input == :password -> %>
+                                    <input
+                                      type="password"
+                                      id={field.name}
+                                      name={"_config_#{field.name}"}
+                                      value=""
+                                      autocomplete="new-password"
+                                      placeholder={
+                                        if to_string(field.value) == "", do: "", else: "********"
+                                      }
+                                    />
                                   <% true -> %>
                                     <input
                                       type="text"
@@ -172,6 +183,17 @@
                                     id={field.name}
                                     name={"_config_#{field.name}"}
                                   ><%= field.value %></textarea>
+                                <% field.input == :password -> %>
+                                  <input
+                                    type="password"
+                                    id={field.name}
+                                    name={"_config_#{field.name}"}
+                                    value=""
+                                    autocomplete="new-password"
+                                    placeholder={
+                                      if to_string(field.value) == "", do: "", else: "********"
+                                    }
+                                  />
                                 <% true -> %>
                                   <input
                                     type="text"
@@ -287,6 +309,15 @@
                                 id={field.name}
                                 name={"_config_#{field.name}"}
                               ><%= field.value %></textarea>
+                            <% field.input == :password -> %>
+                              <input
+                                type="password"
+                                id={field.name}
+                                name={"_config_#{field.name}"}
+                                value=""
+                                autocomplete="new-password"
+                                placeholder={if to_string(field.value) == "", do: "", else: "********"}
+                              />
                             <% true -> %>
                               <input
                                 type="text"

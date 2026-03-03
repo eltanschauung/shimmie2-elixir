@@ -8,6 +8,8 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
   alias ShimmiePhoenix.Site.Pages
   alias ShimmiePhoenix.Site.PrivateMessages
   alias ShimmiePhoenix.Site.Posts
+  alias ShimmiePhoenix.Site.Approval
+  alias ShimmiePhoenix.Site.TelegramAlerts
   alias ShimmiePhoenix.Site.UserProfile
   alias ShimmiePhoenix.Site.Help
   alias ShimmiePhoenix.Site.Store
@@ -96,7 +98,17 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
                    common_source,
                    row_source
                  ) do
-              {:ok, image_id} -> {[image_id | ok_acc], err_acc}
+              {:ok, image_id} ->
+                post_tags =
+                  case Posts.get_post(image_id) do
+                    %{tags: tags} when is_list(tags) -> tags
+                    _ -> []
+                  end
+
+                approved? = Approval.image_approved?(image_id)
+                _ = TelegramAlerts.notify_post_uploaded(image_id, actor, post_tags, approved?)
+                {[image_id | ok_acc], err_acc}
+
               {:error, reason} -> {ok_acc, [reason | err_acc]}
             end
           end)
@@ -386,7 +398,12 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
           acc ->
             value = Map.get(params, "_config_#{name}")
             normalized = cast_setup_value(type, value)
-            [{name, Store.put_config(name, normalized)} | acc]
+
+            if normalized == :skip do
+              acc
+            else
+              [{name, Store.put_config(name, normalized)} | acc]
+            end
         end
 
       if Enum.all?(results, fn {_name, result} -> result == :ok end) do
@@ -2774,7 +2791,8 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
          %{
            name: "telegram_alerts_bot_token",
            label: "Bot token: ",
-           type: "string",
+           type: "secret",
+           input: :password,
            leading_break?: true
          },
          %{
@@ -2965,6 +2983,7 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
 
   defp infer_input_type(name, value) do
     cond do
+      secretish_name?(name) -> :password
       String.contains?(value, "\n") or String.length(value) > 160 -> :textarea
       infer_store_type(name, value) == "bool" -> :bool
       infer_store_type(name, value) == "int" -> :number
@@ -2997,6 +3016,13 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
       String.starts_with?(name, "can_")
   end
 
+  defp secretish_name?(name) do
+    lowered = String.downcase(to_string(name))
+
+    String.contains?(lowered, "token") or String.contains?(lowered, "secret") or
+      String.contains?(lowered, "password") or String.ends_with?(lowered, "_key")
+  end
+
   defp integer_like?(value) do
     case Integer.parse(to_string(value)) do
       {_, ""} -> true
@@ -3010,6 +3036,7 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
     case to_string(type) do
       "bool" -> if(truthy_form_value?(value), do: "Y", else: "N")
       "int" -> value |> parse_shorthand_int() |> Integer.to_string()
+      "secret" -> if(String.trim(value) == "", do: :skip, else: String.trim(value))
       _ -> value
     end
   end

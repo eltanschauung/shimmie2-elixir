@@ -538,19 +538,37 @@ defmodule ShimmiePhoenix.Site.Pages do
     enabled = MapSet.new(enabled_extensions())
     ext_root = legacy_ext_root()
 
-    rows =
-      cond do
-        is_binary(ext_root) and File.dir?(ext_root) ->
-          ext_root
-          |> File.ls!()
-          |> Enum.filter(&File.dir?(Path.join(ext_root, &1)))
-          |> Enum.map(&extension_row(&1, enabled, ext_root))
-
-        true ->
-          enabled
-          |> MapSet.to_list()
-          |> Enum.map(&fallback_extension_row(&1, enabled))
+    discovered =
+      if is_binary(ext_root) and File.dir?(ext_root) do
+        ext_root
+        |> File.ls!()
+        |> Enum.filter(&File.dir?(Path.join(ext_root, &1)))
+      else
+        []
       end
+
+    native = Map.keys(native_extension_catalog())
+
+    all_keys =
+      discovered
+      |> MapSet.new()
+      |> MapSet.union(enabled)
+      |> MapSet.union(MapSet.new(native))
+      |> MapSet.to_list()
+
+    rows =
+      Enum.map(all_keys, fn key ->
+        cond do
+          Map.has_key?(native_extension_catalog(), key) ->
+            native_extension_row(key, enabled)
+
+          key in discovered and is_binary(ext_root) ->
+            extension_row(key, enabled, ext_root)
+
+          true ->
+            fallback_extension_row(key, enabled)
+        end
+      end)
 
     rows
     |> maybe_filter_enabled(include_disabled)
@@ -1338,9 +1356,7 @@ defmodule ShimmiePhoenix.Site.Pages do
         path ->
           case File.read(path) do
             {:ok, body} ->
-              Regex.scan(~r/'([a-zA-Z0-9_]+)'/, body)
-              |> Enum.map(fn [_, value] -> value end)
-              |> Enum.reject(&(&1 in ["ExtManager", "Array"]))
+              parse_enabled_extensions_from_legacy(body)
 
             _ ->
               []
@@ -1372,6 +1388,26 @@ defmodule ShimmiePhoenix.Site.Pages do
       name: humanize_extension_key(key),
       description: "",
       enabled?: MapSet.member?(enabled, key)
+    }
+  end
+
+  defp native_extension_row(key, enabled) do
+    details = Map.get(native_extension_catalog(), key, %{name: humanize_extension_key(key), description: ""})
+
+    %{
+      key: key,
+      name: details.name,
+      description: details.description,
+      enabled?: MapSet.member?(enabled, key) or key == "telegram_alerts"
+    }
+  end
+
+  defp native_extension_catalog do
+    %{
+      "telegram_alerts" => %{
+        name: "Telegram Alerts",
+        description: "Send notifications to Telegram for uploads, approvals, and comments."
+      }
     }
   end
 
@@ -1420,6 +1456,32 @@ defmodule ShimmiePhoenix.Site.Pages do
       root when is_binary(root) -> Path.join([root, "data", "config", "extensions.conf.php"])
       _ -> nil
     end
+  end
+
+  defp parse_enabled_extensions_from_legacy(body) when is_binary(body) do
+    php_array_values =
+      Regex.scan(~r/'([a-zA-Z0-9_]+)'/, body)
+      |> Enum.map(fn [_, value] -> value end)
+      |> Enum.reject(&(&1 in ["ExtManager", "Array"]))
+
+    extra_ext_values =
+      case Regex.run(
+             ~r/EXTRA_EXTS["']?\s*,\s*["']([^"']+)["']/,
+             body,
+             capture: :all_but_first
+           ) do
+        [csv] ->
+          csv
+          |> String.split(",")
+          |> Enum.map(&String.trim/1)
+          |> Enum.reject(&(&1 == ""))
+
+        _ ->
+          []
+      end
+
+    (php_array_values ++ extra_ext_values)
+    |> Enum.uniq()
   end
 
   defp read_enabled_extensions_fallback do
