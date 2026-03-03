@@ -494,7 +494,38 @@ defmodule ShimmiePhoenixWeb.LegacyPagesController do
          true <- admin?(user) do
       conn
       |> assign(:page_title, "Blotter Editor")
-      |> render(:blotter_editor, entries: Pages.list_blotter())
+      |> render(:blotter_editor,
+        entries: Pages.list_blotter(),
+        notice: conn.params["notice"],
+        error: conn.params["error"]
+      )
+    else
+      _ -> send_resp(conn, 403, "Permission Denied")
+    end
+  end
+
+  def blotter_add(conn, params) do
+    with {:ok, user} <- current_user(conn),
+         true <- admin?(user) do
+      entry_text =
+        params["entry_text"]
+        |> to_string()
+        |> String.trim()
+
+      important? = truthy?(params["important"]) or truthy?(params["c_important"])
+
+      case Pages.add_blotter_entry(entry_text, important?) do
+        :ok ->
+          redirect(conn, to: "/blotter/editor?notice=" <> URI.encode_www_form("Entry added"))
+
+        {:error, :invalid_entry} ->
+          redirect(conn, to: "/blotter/editor?error=" <> URI.encode_www_form("Entry is required"))
+
+        _ ->
+          redirect(conn,
+            to: "/blotter/editor?error=" <> URI.encode_www_form("Unable to add entry")
+          )
+      end
     else
       _ -> send_resp(conn, 403, "Permission Denied")
     end

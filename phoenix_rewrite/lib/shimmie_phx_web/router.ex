@@ -139,6 +139,7 @@ defmodule ShimmiePhoenixWeb.Router do
     post "/note/nuke_notes", PostAdminController, :nuke_notes
     post "/note/nuke_requests", PostAdminController, :nuke_requests
     post "/upload", LegacyPagesController, :upload_post
+    post "/blotter/add", LegacyPagesController, :blotter_add
     post "/ip_ban/create", LegacyPagesController, :ip_ban_create
     post "/ip_ban/delete", LegacyPagesController, :ip_ban_delete
     post "/ip_ban/bulk", LegacyPagesController, :ip_ban_bulk

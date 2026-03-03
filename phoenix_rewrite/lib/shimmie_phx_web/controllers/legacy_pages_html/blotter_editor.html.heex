@@ -2,6 +2,31 @@
   <section id="Blotter_Editormain">
     <h3 data-toggle-sel="#Blotter_Editormain" class="">Blotter Editor</h3>
     <div class="blockbody">
+      <%= if is_binary(@notice) and @notice != "" do %>
+        <p class="notice"><%= @notice %></p>
+      <% end %>
+      <%= if is_binary(@error) and @error != "" do %>
+        <p class="error"><%= @error %></p>
+      <% end %>
+      <form action="/blotter/add" method="POST">
+        <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+        <table class="form">
+          <tbody>
+            <tr>
+              <th><label for="entry_text">Message</label></th>
+              <td><textarea id="entry_text" name="entry_text" rows="3"></textarea></td>
+            </tr>
+            <tr>
+              <th><label for="important">Important</label></th>
+              <td><input id="important" type="checkbox" name="important" /></td>
+            </tr>
+            <tr>
+              <th></th>
+              <td><input type="submit" value="Add Entry" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </form>
       <table class="zebra">
         <thead>
           <tr>
@@ -16,7 +41,7 @@
               <td><%= format_post_date(entry_date) %></td>
               <td style="text-align: left;"><%= entry_text %></td>
               <td>
-                <%= if to_string(important) in ["1", "t", "true", "TRUE"], do: "Yes", else: "No" %>
+                <%= if to_string(important) in ["1", "t", "true", "TRUE", "Y", "y"], do: "Yes", else: "No" %>
               </td>
             </tr>
           <% end %>

@@ -195,6 +195,21 @@ defmodule ShimmiePhoenix.Site.Pages do
     end
   end
 
+  def add_blotter_entry(entry_text, important \\ false)
+  def add_blotter_entry(entry_text, important) when is_binary(entry_text) and is_boolean(important) do
+    entry_text = String.trim(entry_text)
+
+    cond do
+      entry_text == "" ->
+        {:error, :invalid_entry}
+
+      true ->
+        add_blotter_entry_db(entry_text, important)
+    end
+  end
+
+  def add_blotter_entry(_, _), do: {:error, :invalid_entry}
+
   def wiki_latest(title) when is_binary(title) do
     escaped = escape_sqlite_string(title)
 
@@ -1142,6 +1157,39 @@ defmodule ShimmiePhoenix.Site.Pages do
     end
   end
 
+  defp add_blotter_entry_db(entry_text, important) do
+    case sqlite_db_path() do
+      nil ->
+        with :ok <- ensure_repo_blotter_table(),
+             {:ok, %{rows: [[next_id]]}} <-
+               Repo.query("SELECT COALESCE(MAX(id), 0) + 1 FROM blotter"),
+             {:ok, _} <-
+               Repo.query(
+                 "INSERT INTO blotter(id, entry_date, entry_text, important) VALUES ($1, NOW(), $2, $3)",
+                 [parse_int(next_id), entry_text, important]
+               ) do
+          :ok
+        else
+          _ -> {:error, :save_failed}
+        end
+
+      path ->
+        with :ok <- ensure_sqlite_blotter_table(path),
+             {:ok, next_id} <- sqlite_single(path, "SELECT COALESCE(MAX(id), 0) + 1 FROM blotter"),
+             :ok <-
+               sqlite_exec(
+                 path,
+                 "INSERT INTO blotter(id, entry_date, entry_text, important) VALUES (" <>
+                   "#{parse_int(next_id)}, #{sqlite_literal(timestamp_now())}, " <>
+                   "#{sqlite_literal(entry_text)}, #{if(important, do: 1, else: 0)})"
+               ) do
+          :ok
+        else
+          _ -> {:error, :save_failed}
+        end
+    end
+  end
+
   defp ensure_repo_aliases_table do
     case Repo.query(
            "CREATE TABLE IF NOT EXISTS aliases (oldtag TEXT PRIMARY KEY, newtag TEXT NOT NULL)"
@@ -1160,6 +1208,19 @@ defmodule ShimmiePhoenix.Site.Pages do
     end
   end
 
+  defp ensure_repo_blotter_table do
+    case Repo.query(
+           "CREATE TABLE IF NOT EXISTS blotter (" <>
+             "id BIGINT PRIMARY KEY, " <>
+             "entry_date TIMESTAMP NOT NULL DEFAULT NOW(), " <>
+             "entry_text TEXT NOT NULL, " <>
+             "important BOOLEAN NOT NULL DEFAULT FALSE)"
+         ) do
+      {:ok, _} -> :ok
+      _ -> {:error, :create_failed}
+    end
+  end
+
   defp ensure_sqlite_aliases_table(path) do
     sqlite_exec(
       path,
@@ -1171,6 +1232,17 @@ defmodule ShimmiePhoenix.Site.Pages do
     sqlite_exec(
       path,
       "CREATE TABLE IF NOT EXISTS auto_tag (tag TEXT PRIMARY KEY, additional_tags TEXT NOT NULL)"
+    )
+  end
+
+  defp ensure_sqlite_blotter_table(path) do
+    sqlite_exec(
+      path,
+      "CREATE TABLE IF NOT EXISTS blotter (" <>
+        "id INTEGER PRIMARY KEY, " <>
+        "entry_date TEXT NOT NULL, " <>
+        "entry_text TEXT NOT NULL, " <>
+        "important INTEGER NOT NULL DEFAULT 0)"
     )
   end
 
